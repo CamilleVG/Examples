@@ -29,7 +29,7 @@ namespace NetworkUtil {
             // 3. begin accepting a client (starts an event loop)
             listener.BeginAcceptSocket(AcceptNewClient, stuff);
 
-            throw new NotImplementedException();
+            return listener;
         }
 
         /// <summary>
