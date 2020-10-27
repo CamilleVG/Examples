@@ -13,7 +13,7 @@ using System.Text;
 public class SocketState
 {
   public readonly Socket TheSocket = null;            // The socket
-  public const int BufferSize = 4096;                 // Size of receive buffer
+  public const int BufferSize = 10;                 // Size of receive //4096
   internal byte[] buffer = new byte[BufferSize];      // Receive buffer
   internal StringBuilder data = new StringBuilder();  // Unprocessed data
 

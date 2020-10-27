@@ -3,9 +3,11 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-namespace NetworkUtil {
+namespace NetworkUtil
+{
 
-    public static class Networking {
+    public static class Networking
+    {
         /////////////////////////////////////////////////////////////////////////////////////////
         // Server-Side Code
         /////////////////////////////////////////////////////////////////////////////////////////
@@ -17,7 +19,8 @@ namespace NetworkUtil {
         /// </summary>
         /// <param name="toCall">The method to call when a new connection is made</param>
         /// <param name="port">The the port to listen on</param>
-        public static TcpListener StartServer(Action<SocketState> toCall, int port) {
+        public static TcpListener StartServer(Action<SocketState> toCall, int port)
+        {
             // 1. Create a listener
             TcpListener listener = new TcpListener(IPAddress.Any, port);
 
@@ -50,21 +53,38 @@ namespace NetworkUtil {
         /// </summary>
         /// <param name="ar">The object asynchronously passed via BeginAcceptSocket. It must contain a tuple with 
         /// 1) a delegate so the user can take action (a SocketState Action), and 2) the TcpListener</param>
-        private static void AcceptNewClient(IAsyncResult ar) {
+        private static void AcceptNewClient(IAsyncResult ar)
+        {
             //To Do: Error Checking
-            
             Tuple<TcpListener, Action<SocketState>> stuff = (Tuple<TcpListener, Action<SocketState>>)ar.AsyncState;
-            TcpListener listener = stuff.Item1;
-            Socket theSocket = listener.EndAcceptSocket(ar);
-            SocketState state = new SocketState(stuff.Item2, theSocket);
-            state.OnNetworkAction(state); //the passed in method should call begin Recieve
-            listener.BeginAcceptSocket(AcceptNewClient, stuff);
+            try
+            {
+                TcpListener listener = stuff.Item1;
+                Socket theSocket = listener.EndAcceptSocket(ar);
+                SocketState state = new SocketState(stuff.Item2, theSocket);
+                state.OnNetworkAction(state); //the passed in method should call begin Recieve
+                listener.BeginAcceptSocket(AcceptNewClient, stuff);
+            }
+            catch (Exception e)
+            {
+                HandleError(stuff.Item2, e.Message);
+            }
+            
+        }
+
+        private static void HandleError(Action<SocketState> toCall, string message)
+        {
+            SocketState state = new SocketState(toCall, null);
+            state.ErrorOccured = true;
+            state.ErrorMessage = message;
+            state.OnNetworkAction(state);
         }
 
         /// <summary>
         /// Stops the given TcpListener.
         /// </summary>
-        public static void StopServer(TcpListener listener) {
+        public static void StopServer(TcpListener listener)
+        {
             listener.Stop();
         }
 
@@ -88,7 +108,8 @@ namespace NetworkUtil {
         /// <param name="toCall">The action to take once the connection is open or an error occurs</param>
         /// <param name="hostName">The server to connect to</param>
         /// <param name="port">The port on which the server is listening</param>
-        public static void ConnectToServer(Action<SocketState> toCall, string hostName, int port) {
+        public static void ConnectToServer(Action<SocketState> toCall, string hostName, int port)
+        {
             // TODO: This method is incomplete, but contains a starting point 
             //       for decoding a host address
 
@@ -97,27 +118,35 @@ namespace NetworkUtil {
             IPAddress ipAddress = IPAddress.None;
 
             // Determine if the server address is a URL or an IP
-            try {
+            try
+            {
                 ipHostInfo = Dns.GetHostEntry(hostName);
                 bool foundIPV4 = false;
                 foreach (IPAddress addr in ipHostInfo.AddressList)
-                    if (addr.AddressFamily != AddressFamily.InterNetworkV6) {
+                    if (addr.AddressFamily != AddressFamily.InterNetworkV6)
+                    {
                         foundIPV4 = true;
                         ipAddress = addr;
                         break;
                     }
                 // Didn't find any IPV4 addresses
-                if (!foundIPV4) {
+                if (!foundIPV4)
+                {
                     // TODO: Indicate an error to the user, as specified in the documentation
+                    HandleError(toCall, "Failed to find IPV4 address for hostName");
                 }
             }
-            catch (Exception) {
+            catch (Exception)
+            {
                 // see if host name is a valid ipaddress
-                try {
+                try
+                {
                     ipAddress = IPAddress.Parse(hostName);
                 }
-                catch (Exception) {
+                catch (Exception e)
+                {
                     // TODO: Indicate an error to the user, as specified in the documentation
+                    HandleError(toCall, e.Message);
                 }
             }
 
@@ -130,8 +159,16 @@ namespace NetworkUtil {
             socket.NoDelay = true;
 
             // TODO: Finish the remainder of the connection process as specified.
-            SocketState state = new SocketState(toCall, socket);
-            state.TheSocket.BeginConnect(ipAddress, port, ConnectedCallback, state);
+            try
+            {
+                SocketState state = new SocketState(toCall, socket);
+                Tuple<SocketState, Action<SocketState>> stuff = new Tuple<SocketState, Action<SocketState>>(state, toCall);
+                state.TheSocket.BeginConnect(ipAddress, port, ConnectedCallback, stuff);
+            }
+            catch (Exception e)
+            {
+                HandleError(toCall, e.Message);
+            }
         }
 
         /// <summary>
@@ -147,11 +184,21 @@ namespace NetworkUtil {
         /// 
         /// </summary>
         /// <param name="ar">The object asynchronously passed via BeginConnect</param>
-        private static void ConnectedCallback(IAsyncResult ar) {
+        private static void ConnectedCallback(IAsyncResult ar)
+        {
             //To Do: Handle errors
-            SocketState state = (SocketState)ar.AsyncState;
-            state.TheSocket.EndConnect(ar); //finalize creation of the connection
-            state.OnNetworkAction(state);  //Now we can start sending and recieving data
+            Tuple<SocketState, Action<SocketState>> stuff = (Tuple<SocketState, Action<SocketState>>)ar.AsyncState;
+            try
+            {
+                SocketState state = stuff.Item1;
+                state.TheSocket.EndConnect(ar); //finalize creation of the connection
+                state.OnNetworkAction(state);  //Now we can start sending and recieving data
+            }
+            catch(Exception e)
+            {
+                HandleError(stuff.Item2, e.Message);
+            }
+            
         }
 
 
@@ -171,9 +218,20 @@ namespace NetworkUtil {
         /// 
         /// </summary>
         /// <param name="state">The SocketState to begin receiving</param>
-        public static void GetData(SocketState state) {
-            //To Do: Handle Errors
-            state.TheSocket.BeginReceive(state.buffer, 0, SocketState.BufferSize, SocketFlags.None, ReceiveCallback, state);
+        public static void GetData(SocketState state)
+        {
+            try
+            {
+                state.TheSocket.BeginReceive(state.buffer, 0, SocketState.BufferSize, SocketFlags.None, ReceiveCallback, state);
+            }
+            catch (Exception e)
+            {
+                state.ErrorOccured = true;
+                state.ErrorMessage = e.Message;
+                state.OnNetworkAction(state);
+            }
+
+
         }
 
         /// <summary>
@@ -193,14 +251,24 @@ namespace NetworkUtil {
         /// <param name="ar"> 
         /// This contains the SocketState that is stored with the callback when the initial BeginReceive is called.
         /// </param>
-        private static void ReceiveCallback(IAsyncResult ar) {
-            // TODO, error handling
+        private static void ReceiveCallback(IAsyncResult ar)
+        {
             SocketState state = (SocketState)ar.AsyncState;
-            int numBytes = state.TheSocket.EndReceive(ar);  //finalizes recieve process
+            try
+            {
+                int numBytes = state.TheSocket.EndReceive(ar);  //finalizes recieve process
 
-            //will need to clear when necessary
-            state.data.Append(Encoding.UTF8.GetString(state.buffer, 0, numBytes));
-            state.OnNetworkAction(state);
+                //will need to clear when necessary
+                state.data.Append(Encoding.UTF8.GetString(state.buffer, 0, numBytes));
+                state.OnNetworkAction(state);
+            }
+            catch (Exception e)
+            {
+                state.ErrorOccured = true;
+                state.ErrorMessage = e.Message;
+                state.OnNetworkAction(state);
+            }
+
         }
 
         /// <summary>
@@ -213,13 +281,28 @@ namespace NetworkUtil {
         /// <param name="socket">The socket on which to send the data</param>
         /// <param name="data">The string to send</param>
         /// <returns>True if the send process was started, false if an error occurs or the socket is already closed</returns>
-        public static bool Send(Socket socket, string data) {
-            //TODO error checking and returning false should the socket be closed
+        public static bool Send(Socket socket, string data)
+        {
+            try
+            {
+                // converts data to a byte array for sending
+                if (null != socket  && socket.Connected)
+                {
+                    byte[] toSend = Encoding.UTF8.GetBytes(data);
+                    socket.BeginSend(toSend, 0, toSend.Length, SocketFlags.None, SendCallback, socket);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch
+            {
+                socket.Close();
+                return false;
+            }
 
-            // converts data to a byte array for sending
-            byte[] toSend = Encoding.UTF8.GetBytes(data);
 
-            socket.BeginSend(toSend, 0, SocketState.BufferSize, SocketFlags.None, SendCallback, socket);
 
             return true;
         }
@@ -235,12 +318,18 @@ namespace NetworkUtil {
         /// This is the Socket (not SocketState) that is stored with the callback when
         /// the initial BeginSend is called.
         /// </param>
-        private static void SendCallback(IAsyncResult ar) {
+        private static void SendCallback(IAsyncResult ar)
+        {
+            try
+            {
+                Socket socket = (Socket)ar.AsyncState;
+                socket.EndSend(ar);
+            }
+            catch
+            {
 
-            //TODO catch errors
-
-            Socket socket = (Socket)ar.AsyncState;
-            socket.EndSend(ar);
+            }
+            
         }
 
 
@@ -255,7 +344,8 @@ namespace NetworkUtil {
         /// <param name="socket">The socket on which to send the data</param>
         /// <param name="data">The string to send</param>
         /// <returns>True if the send process was started, false if an error occurs or the socket is already closed</returns>
-        public static bool SendAndClose(Socket socket, string data) {
+        public static bool SendAndClose(Socket socket, string data)
+        {
             //TODO error checking and returning false should the socket be closed
 
             // converts data to a byte array for sending
@@ -278,7 +368,8 @@ namespace NetworkUtil {
         /// This is the Socket (not SocketState) that is stored with the callback when
         /// the initial BeginSend is called.
         /// </param>
-        private static void SendAndCloseCallback(IAsyncResult ar) {
+        private static void SendAndCloseCallback(IAsyncResult ar)
+        {
 
             Socket socket = (Socket)ar.AsyncState;
             socket.EndSend(ar);
