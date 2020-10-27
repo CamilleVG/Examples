@@ -52,11 +52,12 @@ namespace NetworkUtil {
         /// 1) a delegate so the user can take action (a SocketState Action), and 2) the TcpListener</param>
         private static void AcceptNewClient(IAsyncResult ar) {
             //To Do: Error Checking
+            
             Tuple<TcpListener, Action<SocketState>> stuff = (Tuple<TcpListener, Action<SocketState>>)ar.AsyncState;
             TcpListener listener = stuff.Item1;
             Socket theSocket = listener.EndAcceptSocket(ar);
             SocketState state = new SocketState(stuff.Item2, theSocket);
-            state.OnNetworkAction(state);
+            state.OnNetworkAction(state); //the passed in method should call begin Recieve
             listener.BeginAcceptSocket(AcceptNewClient, stuff);
         }
 
@@ -149,8 +150,8 @@ namespace NetworkUtil {
         private static void ConnectedCallback(IAsyncResult ar) {
             //To Do: Handle errors
             SocketState state = (SocketState)ar.AsyncState;
-            state.TheSocket.EndConnect(ar);
-            state.OnNetworkAction(state);
+            state.TheSocket.EndConnect(ar); //finalize creation of the connection
+            state.OnNetworkAction(state);  //Now we can start sending and recieving data
         }
 
 
@@ -195,12 +196,11 @@ namespace NetworkUtil {
         private static void ReceiveCallback(IAsyncResult ar) {
             // TODO, error handling
             SocketState state = (SocketState)ar.AsyncState;
-            int numBytes = state.TheSocket.EndReceive(ar);
+            int numBytes = state.TheSocket.EndReceive(ar);  //finalizes recieve process
 
             //will need to clear when necessary
             state.data.Append(Encoding.UTF8.GetString(state.buffer, 0, numBytes));
             state.OnNetworkAction(state);
-
         }
 
         /// <summary>
