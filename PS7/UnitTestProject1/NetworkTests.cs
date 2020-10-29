@@ -466,10 +466,95 @@ namespace NetworkUtil
       Assert.AreEqual(message.ToString(), testLocalSocketState.GetData());
     }
 
-    /*** End Send/Receive Tests ***/
+        /*** End Send/Receive Tests ***/
 
 
-    //TODO: Add more of your own tests here
+        //TODO: Add more of your own tests here
+        [TestMethod]
+        public void TestStartServer()
+        {
+            SocketState state = new SocketState(null, null);
 
-  }
+            void toCall(SocketState s)
+            {
+                state = s;
+                throw new Exception();
+            }
+            TcpListener listener = Networking.StartServer( toCall, 2112);
+
+            Assert.IsTrue(state.ErrorOccured);
+        }
+        [TestMethod]
+        public void TestConnectToServerError1()
+        {
+            SocketState state = new SocketState(null, null);
+
+            void toCall(SocketState s)
+            {
+                state = s;
+            }
+            Networking.ConnectToServer(toCall, "bjknnjkljkn;sfghj[{{{{{adf <><>asdfdeb098u]]]]]xxx.<>" , 2112);
+
+            Assert.IsTrue(state.ErrorOccured);
+        }
+        [TestMethod]
+        public void TestConnectToServerError2()
+        {
+            SocketState state = new SocketState(null, null);
+
+            void toCall(SocketState s)
+            {
+                state = s;
+            }
+
+            Networking.ConnectToServer(toCall, null, 2112);
+
+            Assert.IsTrue(state.ErrorOccured);
+        }
+        [TestMethod]
+        public void TestConnectToServerError3()
+        {
+            SocketState state = new SocketState(null, null);
+            string message = "this message";
+            void toCall(SocketState s)
+            {
+                state = s;
+                if (!state.ErrorOccured)
+                {
+                    throw new Exception(message);
+                }
+                Assert.IsTrue(state.ErrorOccured);
+                Assert.IsTrue(state.ErrorMessage.Equals(message));
+            }
+
+            Networking.ConnectToServer(toCall, "localhost", 2112);
+        }
+
+        [TestMethod]
+        public void Test()
+        {
+            SocketState state = new SocketState(null, null);
+            int i = 0;
+            int j = 0;
+            void toServerCall(SocketState s)
+            {
+                i++;
+            }
+            void toClientCall(SocketState s)
+            {
+                j++;
+                if (j == 5)
+                {
+                    Assert.IsTrue(i == 5);
+                }
+            }
+            TcpListener listener = Networking.StartServer(toServerCall, 2112);
+
+            Networking.ConnectToServer(toClientCall, "localhost", 2112);
+            Networking.ConnectToServer(toClientCall, "localhost", 2112);
+            Networking.ConnectToServer(toClientCall, "localhost", 2112);
+            Networking.ConnectToServer(toClientCall, "localhost", 2112);
+            Networking.ConnectToServer(toClientCall, "localhost", 2112);
+        }
+    }
 }

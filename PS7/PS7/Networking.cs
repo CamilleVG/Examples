@@ -147,6 +147,7 @@ namespace NetworkUtil {
                 IAsyncResult result = state.TheSocket.BeginConnect(ipAddress, port, ConnectedCallback, state);
 
                 result.AsyncWaitHandle.WaitOne(3000, true);
+                Console.WriteLine("The socket is Connected? " + state.TheSocket.Connected);
 
                 // If a connection cannot be established, close the socket
                 if (!state.TheSocket.Connected) {
@@ -181,6 +182,7 @@ namespace NetworkUtil {
                 state.OnNetworkAction(state);  //Now we can start sending and recieving data
             }
             catch (Exception e) {
+                Console.WriteLine("Error occured in Callback" + e.Message);
                 HandleError(state.OnNetworkAction, e.Message);
             }
 
