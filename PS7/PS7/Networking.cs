@@ -320,9 +320,14 @@ namespace NetworkUtil {
             //TODO error checking and returning false should the socket be closed
 
             // converts data to a byte array for sending
-            byte[] toSend = Encoding.UTF8.GetBytes(data);
-
-            socket.BeginSend(toSend, 0, SocketState.BufferSize, SocketFlags.None, SendAndCloseCallback, socket);
+            try {
+                byte[] toSend = Encoding.UTF8.GetBytes(data);
+                socket.BeginSend(toSend, 0, toSend.Length, SocketFlags.None, SendAndCloseCallback, socket);
+            }
+            catch {
+                socket.Close();
+                return false;
+            }
             return true;
         }
 
@@ -340,7 +345,6 @@ namespace NetworkUtil {
         /// the initial BeginSend is called.
         /// </param>
         private static void SendAndCloseCallback(IAsyncResult ar) {
-
             Socket socket = (Socket)ar.AsyncState;
             socket.EndSend(ar);
             socket.Close();

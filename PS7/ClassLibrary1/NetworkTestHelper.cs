@@ -33,7 +33,7 @@ namespace NetworkUtil
     }
 
 
-    public static void SetupSingleConnectionTest(out TcpListener listener, out SocketState client, out SocketState server)
+    public static void SetupSingleConnectionTest(out TcpListener listener, out SocketState client, out SocketState server,  int port)
     {
       SocketState clientResult = null;
       SocketState serverResult = null;
@@ -48,8 +48,8 @@ namespace NetworkUtil
         serverResult = x;
       }
 
-      listener = Networking.StartServer(saveServerState, 2112);
-      Networking.ConnectToServer(saveClientState, "localhost", 2112);
+      listener = Networking.StartServer(saveServerState, port);
+      Networking.ConnectToServer(saveClientState, "localhost", port);
 
       WaitForOrTimeout(() => (clientResult != null) && (serverResult != null), timeout);
       client = clientResult;
