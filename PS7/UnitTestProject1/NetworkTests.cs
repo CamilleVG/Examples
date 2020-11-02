@@ -6,6 +6,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.IO.Pipes;
 using System.Net.Sockets;
 using System.Text;
 
@@ -479,16 +480,19 @@ namespace NetworkUtil {
         }
 
         [TestMethod]
-        public void TestConnectToServerError3() {
+        public void TestConnectToServerError3()
+        {
 
             SocketState state = new SocketState(null, null);
             string message = "this message";
             bool firstTime = true;
             int times = 0;
-            void toCall(SocketState s) {
+            void toCall(SocketState s)
+            {
                 times++;
                 Console.WriteLine("Executed " + times + " times");
-                if (firstTime) {
+                if (firstTime)
+                {
                     firstTime = false;
                     throw new Exception(message);
                 }
@@ -553,6 +557,19 @@ namespace NetworkUtil {
             testLocalSocketState.TheSocket.Close();
 
             Assert.IsFalse(Networking.SendAndClose(testLocalSocketState.TheSocket, "a"));
+        }
+
+
+        [TestMethod]
+        public void TestStopServer()
+        {
+            
+            NetworkTestHelper.SetupSingleConnectionTest(out testListener, out testRemoteSocketState, out testLocalSocketState, 2200);
+            Networking.StopServer(testListener);
+
+
+            Networking.ConnectToServer(s => { }, "localhost", 2201);
+            //Assert.IsTrue();
         }
 
     }

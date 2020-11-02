@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 namespace NetworkUtil {
 
@@ -234,21 +235,24 @@ namespace NetworkUtil {
         /// This contains the SocketState that is stored with the callback when the initial BeginReceive is called.
         /// </param>
         private static void ReceiveCallback(IAsyncResult ar) {
-            SocketState state = (SocketState)ar.AsyncState;
-            try {
-                int numBytes = state.TheSocket.EndReceive(ar);  //finalizes recieve process
+                SocketState state = (SocketState)ar.AsyncState;
+                try
+                {
+                    lock (state.data)
+                    {
+                        int numBytes = state.TheSocket.EndReceive(ar);  //finalizes recieve process
 
-                if (numBytes == 0)
-                    throw new Exception("Socket closed during data transfer");
+                        if (numBytes == 0)
+                            throw new Exception("Socket closed during data transfer");
 
-                //will need to clear when necessary
-                state.data.Append(Encoding.UTF8.GetString(state.buffer, 0, numBytes));
-                state.OnNetworkAction(state);
-            }
-            catch (Exception e) {
-                HandleError(state.OnNetworkAction, e.Message);
-            }
-
+                        state.data.Append(Encoding.UTF8.GetString(state.buffer, 0, numBytes));
+                        state.OnNetworkAction(state);
+                    }
+                }
+                catch (Exception e)
+                {
+                    HandleError(state.OnNetworkAction, e.Message);
+                }
         }
 
         /// <summary>
