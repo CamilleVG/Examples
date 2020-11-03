@@ -12,10 +12,12 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
-namespace NetworkUtil {
+namespace NetworkUtil
+{
 
     [TestClass]
-    public class NetworkTests {
+    public class NetworkTests
+    {
         // When testing network code, we have some necessary global state,
         // since open sockets are system-wide (managed by the OS)
         // Therefore, we need some per-test setup and cleanup
@@ -24,7 +26,8 @@ namespace NetworkUtil {
 
 
         [TestInitialize]
-        public void Init() {
+        public void Init()
+        {
             testListener = null;
             testLocalSocketState = null;
             testRemoteSocketState = null;
@@ -32,13 +35,16 @@ namespace NetworkUtil {
 
 
         [TestCleanup]
-        public void Cleanup() {
+        public void Cleanup()
+        {
             StopTestServer(testListener, testLocalSocketState, testRemoteSocketState);
         }
 
 
-        private void StopTestServer(TcpListener listener, SocketState socket1, SocketState socket2) {
-            try {
+        private void StopTestServer(TcpListener listener, SocketState socket1, SocketState socket2)
+        {
+            try
+            {
                 // '?.' is just shorthand for null checks
                 listener?.Stop();
                 socket1?.TheSocket?.Shutdown(SocketShutdown.Both);
@@ -55,15 +61,18 @@ namespace NetworkUtil {
 
 
         public void SetupTestConnections(bool clientSide,
-          out TcpListener listener, out SocketState local, out SocketState remote, int port) {
-            if (clientSide) {
+          out TcpListener listener, out SocketState local, out SocketState remote, int port)
+        {
+            if (clientSide)
+            {
                 NetworkTestHelper.SetupSingleConnectionTest(
                   out listener,
                   out local,    // local becomes client
                   out remote,// remote becomes server
                   port);
             }
-            else {
+            else
+            {
                 NetworkTestHelper.SetupSingleConnectionTest(
                   out listener,
                   out remote,   // remote becomes client
@@ -78,7 +87,8 @@ namespace NetworkUtil {
 
         /*** Begin Basic Connectivity Tests ***/
         [TestMethod]
-        public void TestConnect() {
+        public void TestConnect()
+        {
             NetworkTestHelper.SetupSingleConnectionTest(out testListener, out testLocalSocketState, out testRemoteSocketState, 2112);
 
             Assert.IsTrue(testRemoteSocketState.TheSocket.Connected);
@@ -89,10 +99,12 @@ namespace NetworkUtil {
 
 
         [TestMethod]
-        public void TestConnectNoServer() {
+        public void TestConnectNoServer()
+        {
             bool isCalled = false;
 
-            void saveClientState(SocketState x) {
+            void saveClientState(SocketState x)
+            {
                 isCalled = true;
                 testLocalSocketState = x;
             }
@@ -107,10 +119,12 @@ namespace NetworkUtil {
 
 
         [TestMethod]
-        public void TestConnectTimeout() {
+        public void TestConnectTimeout()
+        {
             bool isCalled = false;
 
-            void saveClientState(SocketState x) {
+            void saveClientState(SocketState x)
+            {
                 isCalled = true;
                 testLocalSocketState = x;
             }
@@ -126,16 +140,19 @@ namespace NetworkUtil {
 
 
         [TestMethod]
-        public void TestConnectCallsDelegate() {
+        public void TestConnectCallsDelegate()
+        {
             bool serverActionCalled = false;
             bool clientActionCalled = false;
 
-            void saveServerState(SocketState x) {
+            void saveServerState(SocketState x)
+            {
                 testLocalSocketState = x;
                 serverActionCalled = true;
             }
 
-            void saveClientState(SocketState x) {
+            void saveClientState(SocketState x)
+            {
                 testRemoteSocketState = x;
                 clientActionCalled = true;
             }
@@ -163,7 +180,8 @@ namespace NetworkUtil {
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod]
-        public void TestDisconnectLocalThenSend(bool clientSide) {
+        public void TestDisconnectLocalThenSend(bool clientSide)
+        {
             SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2116);
 
             testLocalSocketState.TheSocket.Shutdown(SocketShutdown.Both);
@@ -184,7 +202,8 @@ namespace NetworkUtil {
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod]
-        public void TestSendTinyMessage(bool clientSide) {
+        public void TestSendTinyMessage(bool clientSide)
+        {
             SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2117);
 
             // Set the action to do nothing
@@ -206,7 +225,8 @@ namespace NetworkUtil {
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod]
-        public void TestNoEventLoop(bool clientSide) {
+        public void TestNoEventLoop(bool clientSide)
+        {
             SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2115);
 
             int calledCount = 0;
@@ -233,7 +253,8 @@ namespace NetworkUtil {
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod]
-        public void TestDelayedSends(bool clientSide) {
+        public void TestDelayedSends(bool clientSide)
+        {
             SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2118);
 
             // Set the action to do nothing
@@ -261,13 +282,15 @@ namespace NetworkUtil {
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod]
-        public void TestEventLoop(bool clientSide) {
+        public void TestEventLoop(bool clientSide)
+        {
             SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2119);
 
             int calledCount = 0;
 
             // This OnNetworkAction asks for more data, creating an event loop
-            testLocalSocketState.OnNetworkAction = (x) => {
+            testLocalSocketState.OnNetworkAction = (x) =>
+            {
                 if (x.ErrorOccured)
                     return;
                 calledCount++;
@@ -288,14 +311,16 @@ namespace NetworkUtil {
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod]
-        public void TestChangeOnNetworkAction(bool clientSide) {
+        public void TestChangeOnNetworkAction(bool clientSide)
+        {
             SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2120);
 
             int firstCalledCount = 0;
             int secondCalledCount = 0;
 
             // This is an example of a nested method (just another way to make a quick delegate)
-            void firstOnNetworkAction(SocketState state) {
+            void firstOnNetworkAction(SocketState state)
+            {
                 if (state.ErrorOccured)
                     return;
                 firstCalledCount++;
@@ -303,7 +328,8 @@ namespace NetworkUtil {
                 Networking.GetData(testLocalSocketState);
             }
 
-            void secondOnNetworkAction(SocketState state) {
+            void secondOnNetworkAction(SocketState state)
+            {
                 secondCalledCount++;
             }
 
@@ -326,12 +352,14 @@ namespace NetworkUtil {
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod]
-        public void TestReceiveRemovesAll(bool clientSide) {
+        public void TestReceiveRemovesAll(bool clientSide)
+        {
             SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2121);
 
             StringBuilder localCopy = new StringBuilder();
 
-            void removeMessage(SocketState state) {
+            void removeMessage(SocketState state)
+            {
                 if (state.ErrorOccured)
                     return;
                 localCopy.Append(state.GetData());
@@ -344,7 +372,8 @@ namespace NetworkUtil {
             // Start a receive loop
             Networking.GetData(testLocalSocketState);
 
-            for (int i = 0; i < 10000; i++) {
+            for (int i = 0; i < 10000; i++)
+            {
                 char c = (char)('a' + (i % 26));
                 Networking.Send(testRemoteSocketState.TheSocket, "" + c);
             }
@@ -354,7 +383,8 @@ namespace NetworkUtil {
             // Reconstruct the original message outside the send loop
             // to (in theory) make the send operations happen more rapidly.
             StringBuilder message = new StringBuilder();
-            for (int i = 0; i < 10000; i++) {
+            for (int i = 0; i < 10000; i++)
+            {
                 char c = (char)('a' + (i % 26));
                 message.Append(c);
             }
@@ -366,7 +396,8 @@ namespace NetworkUtil {
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod]
-        public void TestReceiveRemovesPartial(bool clientSide) {
+        public void TestReceiveRemovesPartial(bool clientSide)
+        {
             SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2122);
 
             const string toSend = "abcdefghijklmnopqrstuvwxyz";
@@ -376,7 +407,8 @@ namespace NetworkUtil {
 
             StringBuilder localCopy = new StringBuilder();
 
-            void removeMessage(SocketState state) {
+            void removeMessage(SocketState state)
+            {
                 if (state.ErrorOccured)
                     return;
                 int numToRemove = rand.Next(state.GetData().Length);
@@ -390,7 +422,8 @@ namespace NetworkUtil {
             // Start a receive loop
             Networking.GetData(testLocalSocketState);
 
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 1000; i++)
+            {
                 Networking.Send(testRemoteSocketState.TheSocket, toSend);
             }
 
@@ -402,7 +435,8 @@ namespace NetworkUtil {
             // Reconstruct the original message outside the send loop
             // to (in theory) make the send operations happen more rapidly.
             StringBuilder message = new StringBuilder();
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 1000; i++)
+            {
                 message.Append(toSend);
             }
 
@@ -414,10 +448,12 @@ namespace NetworkUtil {
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod]
-        public void TestReceiveHugeMessage(bool clientSide) {
+        public void TestReceiveHugeMessage(bool clientSide)
+        {
             SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2123);
 
-            testLocalSocketState.OnNetworkAction = (x) => {
+            testLocalSocketState.OnNetworkAction = (x) =>
+            {
                 if (x.ErrorOccured)
                     return;
                 Networking.GetData(x);
@@ -440,17 +476,21 @@ namespace NetworkUtil {
 
         // Our tests
         [TestMethod]
-        public void TestStartServer() {
+        public void TestStartServer()
+        {
             SocketState state = new SocketState(null, null);
-            void toCall(SocketState s) {
+            void toCall(SocketState s)
+            {
             }
 
             bool passed = false;
-            try {
+            try
+            {
                 TcpListener listener = Networking.StartServer(toCall, 10000000);
                 NetworkTestHelper.WaitForOrTimeout(() => false, 2000);
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 passed = true;
             }
 
@@ -459,10 +499,12 @@ namespace NetworkUtil {
         }
 
         [TestMethod]
-        public void TestConnectToServerError1() {
+        public void TestConnectToServerError1()
+        {
             SocketState state = new SocketState(null, null);
 
-            void toCall(SocketState s) {
+            void toCall(SocketState s)
+            {
                 state = s;
             }
             Networking.ConnectToServer(toCall, "bjknnjkljkn;sfghj[{{{{{adf <><>asdfdeb098u]]]]]xxx.<>", 2130);
@@ -471,10 +513,12 @@ namespace NetworkUtil {
         }
 
         [TestMethod]
-        public void TestConnectToServerError2() {
+        public void TestConnectToServerError2()
+        {
             SocketState state = new SocketState(null, null);
 
-            void toCall(SocketState s) {
+            void toCall(SocketState s)
+            {
                 state = s;
             }
 
@@ -484,15 +528,18 @@ namespace NetworkUtil {
         }
 
         [TestMethod]
-        public void TestConnectToServerError3() {
+        public void TestConnectToServerError3()
+        {
 
             string message = "this message here";
             bool firstTime = true;
             int times = 0;
-            void toCall(SocketState s) {
+            void toCall(SocketState s)
+            {
                 times++;
                 testLocalSocketState = s;
-                if (firstTime) {
+                if (firstTime)
+                {
                     firstTime = false;
                     throw new Exception(message);
                 }
@@ -508,9 +555,11 @@ namespace NetworkUtil {
         }
 
         [TestMethod]
-        public void TestConnectToServerErrorNoServerExists() {
+        public void TestConnectToServerErrorNoServerExists()
+        {
 
-            void toCall(SocketState s) {
+            void toCall(SocketState s)
+            {
                 testLocalSocketState = s;
             }
             Networking.ConnectToServer(toCall, "localhost", 2134);
@@ -520,14 +569,17 @@ namespace NetworkUtil {
         }
 
         [TestMethod]
-        public void TestMultipleClientConnections() {
+        public void TestMultipleClientConnections()
+        {
             SocketState state = new SocketState(null, null);
             int i = 0;
             int j = 0;
-            void toServerCall(SocketState s) {
+            void toServerCall(SocketState s)
+            {
                 i++;
             }
-            void toClientCall(SocketState s) {
+            void toClientCall(SocketState s)
+            {
                 j++;
                 NetworkTestHelper.WaitForOrTimeout(() => false, 2000);
                 Assert.IsTrue(i == j);
@@ -544,7 +596,8 @@ namespace NetworkUtil {
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod]
-        public void TestCloseLocalThenSend(bool clientSide) {
+        public void TestCloseLocalThenSend(bool clientSide)
+        {
             SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2151);
 
             testLocalSocketState.TheSocket.Close();
@@ -556,7 +609,8 @@ namespace NetworkUtil {
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod]
-        public void TestSendAndClose(bool clientSide) {
+        public void TestSendAndClose(bool clientSide)
+        {
             SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2151);
 
             Assert.IsTrue(Networking.SendAndClose(testLocalSocketState.TheSocket, "a"));
@@ -567,7 +621,8 @@ namespace NetworkUtil {
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod]
-        public void TestCloseThenSendAndClose(bool clientSide) {
+        public void TestCloseThenSendAndClose(bool clientSide)
+        {
             SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2151);
 
             testLocalSocketState.TheSocket.Close();
@@ -577,7 +632,8 @@ namespace NetworkUtil {
 
 
         [TestMethod]
-        public void TestStopServer() {
+        public void TestStopServer()
+        {
 
             NetworkTestHelper.SetupSingleConnectionTest(
                 out testListener,
@@ -599,7 +655,8 @@ namespace NetworkUtil {
         [DataRow(true)]
         [DataRow(false)]
         [TestMethod]
-        public void testGetDataConcurrency(bool clientSide) {
+        public void testGetDataConcurrency(bool clientSide)
+        {
 
             SetupTestConnections(
                 clientSide,
@@ -608,17 +665,21 @@ namespace NetworkUtil {
                 out testLocalSocketState, 2356);
 
             string data = "";
-            void waitForABit(SocketState s) {
+            void waitForABit(SocketState s)
+            {
                 data += s.GetData() + " ";
                 s.RemoveData(0, s.GetData().Length);
+                Networking.GetData(testRemoteSocketState);
             }
 
             testRemoteSocketState.OnNetworkAction = waitForABit;
 
             Networking.GetData(testRemoteSocketState);
-            Networking.GetData(testRemoteSocketState);
-
+            
             Networking.Send(testLocalSocketState.TheSocket, "HelloThere");
+            //The first GetData call will take 5000
+            //It will recieve the first message "HelloThere" and will concat that to the string
+            //In that time another message "Pan" is sent that alters the socket state buffer
 
             NetworkTestHelper.WaitForOrTimeout(() => false, 2000);
 
@@ -627,8 +688,39 @@ namespace NetworkUtil {
             NetworkTestHelper.WaitForOrTimeout(() => false, 8500);
 
             Assert.AreEqual("HelloThere Pan ", data);
+        }
 
+        [DataRow(true)]
+        [DataRow(false)]
+        [TestMethod]
+        public void testMultipleSends(bool clientSide)
+        {
+            SetupTestConnections(
+                clientSide,
+                out testListener,
+                out testRemoteSocketState,
+                out testLocalSocketState, 2380);
 
+            string data = "";
+            void ProcessMessages(SocketState s)
+            {
+                data += s.GetData() + " ";
+                s.RemoveData(0, s.GetData().Length);
+                if (!s.ErrorOccured)
+                {
+                    Networking.GetData(testRemoteSocketState);
+                }
+            }
+            testRemoteSocketState.OnNetworkAction = ProcessMessages;
+            bool firstSent;
+            bool secondSent;
+            firstSent = Networking.Send(testLocalSocketState.TheSocket, "HelloThere");
+            secondSent = Networking.Send(testLocalSocketState.TheSocket, "Pan");
+
+            Networking.GetData(testRemoteSocketState);
+            NetworkTestHelper.WaitForOrTimeout(() => false, 3000);
+            Assert.IsTrue(firstSent && secondSent);
+            Assert.AreEqual("HelloThere Pan ", data);
         }
     }
 }

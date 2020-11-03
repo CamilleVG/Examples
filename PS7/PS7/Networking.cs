@@ -209,9 +209,7 @@ namespace NetworkUtil {
             }
             catch (Exception e) {
                 HandleError(state.OnNetworkAction, e.Message);
-                //state.ErrorOccured = true;
-                //state.ErrorMessage = e.Message;
-                //state.OnNetworkAction(state);
+                
             }
 
 
@@ -242,10 +240,8 @@ namespace NetworkUtil {
 
                     if (numBytes == 0)
                         throw new Exception("Socket closed during data transfer");
-
-                    //SLEEP
-                    Thread.Sleep(5000);
-                    state.data.Append(Encoding.UTF8.GetString(state.buffer, 0, numBytes));
+                    //Thread.Sleep(5000);
+                    state.data.Append(Encoding.UTF8.GetString(state.buffer, 0, numBytes)); //appends data from buffer that is converted from bytes to UTF8 text
                     state.OnNetworkAction(state);
                 }
             }
