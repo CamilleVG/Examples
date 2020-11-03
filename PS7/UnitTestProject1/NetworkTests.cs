@@ -59,14 +59,14 @@ namespace NetworkUtil {
                   out listener,
                   out local,    // local becomes client
                   out remote,// remote becomes server
-                  port);  
+                  port);
             }
             else {
                 NetworkTestHelper.SetupSingleConnectionTest(
                   out listener,
                   out remote,   // remote becomes client
                   out local,// local becomes server
-                  port);   
+                  port);
             }
 
             Assert.IsNotNull(local);
@@ -413,7 +413,7 @@ namespace NetworkUtil {
         [DataRow(false)]
         [DataTestMethod]
         public void TestReceiveHugeMessage(bool clientSide) {
-            SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState,2123);
+            SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2123);
 
             testLocalSocketState.OnNetworkAction = (x) => {
                 if (x.ErrorOccured)
@@ -455,6 +455,7 @@ namespace NetworkUtil {
             Assert.IsTrue(passed);
 
         }
+
         [TestMethod]
         public void TestConnectToServerError1() {
             SocketState state = new SocketState(null, null);
@@ -466,6 +467,7 @@ namespace NetworkUtil {
 
             Assert.IsTrue(state.ErrorOccured);
         }
+
         [TestMethod]
         public void TestConnectToServerError2() {
             SocketState state = new SocketState(null, null);
@@ -480,27 +482,39 @@ namespace NetworkUtil {
         }
 
         [TestMethod]
-        public void TestConnectToServerError3()
-        {
+        public void TestConnectToServerError3() {
 
-            SocketState state = new SocketState(null, null);
-            string message = "this message";
+            string message = "this message here";
             bool firstTime = true;
             int times = 0;
-            void toCall(SocketState s)
-            {
+            void toCall(SocketState s) {
                 times++;
-                Console.WriteLine("Executed " + times + " times");
-                if (firstTime)
-                {
+                testLocalSocketState = s;
+                if (firstTime) {
                     firstTime = false;
                     throw new Exception(message);
                 }
 
-                Assert.IsTrue(state.ErrorOccured);
-                Assert.IsTrue(state.ErrorMessage.Equals(message));
+            }
+            testListener = Networking.StartServer(s => { }, 2134);
+            Networking.ConnectToServer(toCall, "localhost", 2134);
+
+            NetworkTestHelper.WaitForOrTimeout(() => false, 3000);
+            Assert.IsTrue(testLocalSocketState.ErrorOccured);
+            Assert.IsTrue(testLocalSocketState.ErrorMessage.Equals(message));
+
+        }
+
+        [TestMethod]
+        public void TestConnectToServerErrorNoServerExists() {
+
+            void toCall(SocketState s) {
+                testLocalSocketState = s;
             }
             Networking.ConnectToServer(toCall, "localhost", 2134);
+
+            NetworkTestHelper.WaitForOrTimeout(() => false, 3000);
+            Assert.IsTrue(testLocalSocketState.ErrorOccured);
         }
 
         [TestMethod]
@@ -543,7 +557,7 @@ namespace NetworkUtil {
         public void TestSendAndClose(bool clientSide) {
             SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState, 2151);
 
-           Assert.IsTrue(Networking.SendAndClose(testLocalSocketState.TheSocket, "a"));
+            Assert.IsTrue(Networking.SendAndClose(testLocalSocketState.TheSocket, "a"));
             // No assertions, but the following should not result in an unhandled exception
             Assert.IsFalse(Networking.Send(testLocalSocketState.TheSocket, "a"));
         }
@@ -561,9 +575,8 @@ namespace NetworkUtil {
 
 
         [TestMethod]
-        public void TestStopServer()
-        {
-            
+        public void TestStopServer() {
+
             NetworkTestHelper.SetupSingleConnectionTest(out testListener, out testRemoteSocketState, out testLocalSocketState, 2200);
             Networking.StopServer(testListener);
 

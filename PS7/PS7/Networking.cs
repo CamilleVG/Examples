@@ -181,6 +181,7 @@ namespace NetworkUtil {
                 state.OnNetworkAction(state);  //Now we can start sending and recieving data
             }
             catch (Exception e) {
+                Console.WriteLine("Error caught here with message" + e.Message);
                 HandleError(state.OnNetworkAction, e.Message);
             }
 
