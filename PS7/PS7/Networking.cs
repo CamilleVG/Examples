@@ -181,7 +181,6 @@ namespace NetworkUtil {
                 state.OnNetworkAction(state);  //Now we can start sending and recieving data
             }
             catch (Exception e) {
-                Console.WriteLine("Error caught here with message" + e.Message);
                 HandleError(state.OnNetworkAction, e.Message);
             }
 
@@ -236,24 +235,23 @@ namespace NetworkUtil {
         /// This contains the SocketState that is stored with the callback when the initial BeginReceive is called.
         /// </param>
         private static void ReceiveCallback(IAsyncResult ar) {
-                SocketState state = (SocketState)ar.AsyncState;
-                try
-                {
-                    lock (state.data)
-                    {
-                        int numBytes = state.TheSocket.EndReceive(ar);  //finalizes recieve process
+            SocketState state = (SocketState)ar.AsyncState;
+            try {
+                lock (state.data) {
+                    int numBytes = state.TheSocket.EndReceive(ar);  //finalizes recieve process
 
-                        if (numBytes == 0)
-                            throw new Exception("Socket closed during data transfer");
+                    if (numBytes == 0)
+                        throw new Exception("Socket closed during data transfer");
 
-                        state.data.Append(Encoding.UTF8.GetString(state.buffer, 0, numBytes));
-                        state.OnNetworkAction(state);
-                    }
+                    //SLEEP
+                    Thread.Sleep(5000);
+                    state.data.Append(Encoding.UTF8.GetString(state.buffer, 0, numBytes));
+                    state.OnNetworkAction(state);
                 }
-                catch (Exception e)
-                {
-                    HandleError(state.OnNetworkAction, e.Message);
-                }
+            }
+            catch (Exception e) {
+                HandleError(state.OnNetworkAction, e.Message);
+            }
         }
 
         /// <summary>

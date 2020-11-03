@@ -7,8 +7,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.IO.Pipes;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 namespace NetworkUtil {
 
@@ -577,13 +579,56 @@ namespace NetworkUtil {
         [TestMethod]
         public void TestStopServer() {
 
-            NetworkTestHelper.SetupSingleConnectionTest(out testListener, out testRemoteSocketState, out testLocalSocketState, 2200);
+            NetworkTestHelper.SetupSingleConnectionTest(
+                out testListener,
+                out testRemoteSocketState,
+                out testLocalSocketState, 2200);
+
             Networking.StopServer(testListener);
 
+            SocketState newState = new SocketState(null, null);
 
-            Networking.ConnectToServer(s => { }, "localhost", 2201);
-            //Assert.IsTrue();
+            Networking.ConnectToServer(s => newState = s, "localhost", 2200);
+
+            NetworkTestHelper.WaitForOrTimeout(() => false, 3000);
+
+            Assert.IsTrue(newState.ErrorOccured);
+
         }
 
+        [DataRow(true)]
+        [DataRow(false)]
+        [TestMethod]
+        public void testGetDataConcurrency(bool clientSide) {
+
+            SetupTestConnections(
+                clientSide,
+                out testListener,
+                out testRemoteSocketState,
+                out testLocalSocketState, 2356);
+
+            string data = "";
+            void waitForABit(SocketState s) {
+                data += s.GetData() + " ";
+                s.RemoveData(0, s.GetData().Length);
+            }
+
+            testRemoteSocketState.OnNetworkAction = waitForABit;
+
+            Networking.GetData(testRemoteSocketState);
+            Networking.GetData(testRemoteSocketState);
+
+            Networking.Send(testLocalSocketState.TheSocket, "HelloThere");
+
+            NetworkTestHelper.WaitForOrTimeout(() => false, 2000);
+
+            Networking.Send(testLocalSocketState.TheSocket, "Pan");
+
+            NetworkTestHelper.WaitForOrTimeout(() => false, 8500);
+
+            Assert.AreEqual("HelloThere Pan ", data);
+
+
+        }
     }
 }
