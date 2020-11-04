@@ -6,6 +6,10 @@ using System.Threading;
 
 namespace NetworkUtil {
 
+    /// <summary>
+    /// Code provided from Daniel Kopta's Fall 2020 CS3500 course at the University of Utah
+    /// Edited by Preston Powell and Camille Van Ginkel, 2020
+    /// </summary>
     public static class Networking {
         /////////////////////////////////////////////////////////////////////////////////////////
         // Server-Side Code
@@ -65,6 +69,11 @@ namespace NetworkUtil {
             }
         }
 
+        /// <summary>
+        /// Creates a new Socket, sets the error occured flag to true and invokes the OnNetworkAction delegate
+        /// </summary>
+        /// <param name="toCall"></param>
+        /// <param name="message"></param>
         private static void HandleError(Action<SocketState> toCall, string message) {
             SocketState state = new SocketState(toCall, null);
             state.ErrorOccured = true;
@@ -100,8 +109,6 @@ namespace NetworkUtil {
         /// <param name="hostName">The server to connect to</param>
         /// <param name="port">The port on which the server is listening</param>
         public static void ConnectToServer(Action<SocketState> toCall, string hostName, int port) {
-            // TODO: This method is incomplete, but contains a starting point 
-            //       for decoding a host address
 
             // Establish the remote endpoint for the socket.
             IPHostEntry ipHostInfo;
@@ -119,7 +126,6 @@ namespace NetworkUtil {
                     }
                 // Didn't find any IPV4 addresses
                 if (!foundIPV4) {
-                    // TODO: Indicate an error to the user, as specified in the documentation
                     HandleError(toCall, "Failed to find IPV4 address for hostName");
                 }
             }
@@ -129,7 +135,6 @@ namespace NetworkUtil {
                     ipAddress = IPAddress.Parse(hostName);
                 }
                 catch (Exception e) {
-                    // TODO: Indicate an error to the user, as specified in the documentation
                     HandleError(toCall, e.Message);
                 }
             }
@@ -142,7 +147,6 @@ namespace NetworkUtil {
             // game like ours will be 
             socket.NoDelay = true;
 
-            // TODO: Finish the remainder of the connection process as specified.
             try {
                 SocketState state = new SocketState(toCall, socket);
                 IAsyncResult result = state.TheSocket.BeginConnect(ipAddress, port, ConnectedCallback, state);
@@ -152,11 +156,10 @@ namespace NetworkUtil {
                 // If a connection cannot be established, close the socket
                 if (!state.TheSocket.Connected) {
                     state.TheSocket.Close();
-                    throw new Exception("Cannot establish a connection");
                 }
             }
             catch (Exception e) {
-                //HandleError(toCall, e.Message);
+                HandleError(toCall, e.Message);
             }
         }
 
@@ -174,7 +177,6 @@ namespace NetworkUtil {
         /// </summary>
         /// <param name="ar">The object asynchronously passed via BeginConnect</param>
         private static void ConnectedCallback(IAsyncResult ar) {
-            //To Do: Handle errors
             SocketState state = (SocketState)ar.AsyncState;
             try {
                 state.TheSocket.EndConnect(ar); //finalize creation of the connection
@@ -209,7 +211,7 @@ namespace NetworkUtil {
             }
             catch (Exception e) {
                 HandleError(state.OnNetworkAction, e.Message);
-                
+
             }
 
 
@@ -236,14 +238,14 @@ namespace NetworkUtil {
             SocketState state = (SocketState)ar.AsyncState;
             try {
                 lock (state.data) {
-                    int numBytes = state.TheSocket.EndReceive(ar);  //finalizes recieve process
+                int numBytes = state.TheSocket.EndReceive(ar);  //finalizes recieve process
 
-                    if (numBytes == 0)
-                        throw new Exception("Socket closed during data transfer");
-                    //Thread.Sleep(5000);
+                if (numBytes == 0)
+                    throw new Exception("Socket closed during data transfer");
+                //Thread.Sleep(5000);
                     state.data.Append(Encoding.UTF8.GetString(state.buffer, 0, numBytes)); //appends data from buffer that is converted from bytes to UTF8 text
-                    state.OnNetworkAction(state);
                 }
+                state.OnNetworkAction(state);
             }
             catch (Exception e) {
                 HandleError(state.OnNetworkAction, e.Message);
@@ -316,8 +318,6 @@ namespace NetworkUtil {
         /// <param name="data">The string to send</param>
         /// <returns>True if the send process was started, false if an error occurs or the socket is already closed</returns>
         public static bool SendAndClose(Socket socket, string data) {
-            //TODO error checking and returning false should the socket be closed
-
             // converts data to a byte array for sending
             try {
                 byte[] toSend = Encoding.UTF8.GetBytes(data);
@@ -344,9 +344,15 @@ namespace NetworkUtil {
         /// the initial BeginSend is called.
         /// </param>
         private static void SendAndCloseCallback(IAsyncResult ar) {
-            Socket socket = (Socket)ar.AsyncState;
-            socket.EndSend(ar);
-            socket.Close();
+            try {
+                Socket socket = (Socket)ar.AsyncState;
+                socket.EndSend(ar);
+                socket.Close();
+            }
+            catch {
+
+            }
+
         }
 
     }

@@ -655,9 +655,7 @@ namespace NetworkUtil
         [DataRow(true)]
         [DataRow(false)]
         [TestMethod]
-        public void testGetDataConcurrency(bool clientSide)
-        {
-
+        public void testGetDataConcurrency(bool clientSide) {
             SetupTestConnections(
                 clientSide,
                 out testListener,
@@ -665,8 +663,10 @@ namespace NetworkUtil
                 out testLocalSocketState, 2356);
 
             string data = "";
-            void waitForABit(SocketState s)
-            {
+            void waitForABit(SocketState s) {
+                if (s.ErrorOccured)
+                    return;
+
                 data += s.GetData() + " ";
                 s.RemoveData(0, s.GetData().Length);
                 Networking.GetData(testRemoteSocketState);
@@ -675,7 +675,7 @@ namespace NetworkUtil
             testRemoteSocketState.OnNetworkAction = waitForABit;
 
             Networking.GetData(testRemoteSocketState);
-            
+
             Networking.Send(testLocalSocketState.TheSocket, "HelloThere");
             //The first GetData call will take 5000
             //It will recieve the first message "HelloThere" and will concat that to the string
@@ -721,6 +721,39 @@ namespace NetworkUtil
             NetworkTestHelper.WaitForOrTimeout(() => false, 3000);
             Assert.IsTrue(firstSent && secondSent);
             Assert.AreEqual("HelloThere Pan ", data);
+        }
+
+        [DataRow(true)]
+        [DataRow(false)]
+        [TestMethod]
+        public void GetDataErrorCatching(bool clientSide) {
+            SetupTestConnections(
+                clientSide,
+                out testListener,
+                out testRemoteSocketState,
+                out testLocalSocketState, 2380);
+
+            string data = "";
+            void ProcessMessages(SocketState s) {
+                testRemoteSocketState = s;
+
+                if (s.ErrorOccured)
+                    return;
+
+                data += s.GetData() + " ";
+                s.RemoveData(0, s.GetData().Length);
+            }
+            testRemoteSocketState.OnNetworkAction = ProcessMessages;
+            bool firstSent;
+            bool secondSent;
+            firstSent = Networking.Send(testLocalSocketState.TheSocket, "HelloThere");
+            secondSent = Networking.Send(testLocalSocketState.TheSocket, "Pan");
+
+            testRemoteSocketState.TheSocket.Close();
+            Networking.GetData(testRemoteSocketState);
+            NetworkTestHelper.WaitForOrTimeout(() => false, 3000);
+
+            Assert.IsTrue(testRemoteSocketState.ErrorOccured);
         }
     }
 }
