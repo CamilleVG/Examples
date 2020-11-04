@@ -237,12 +237,12 @@ namespace NetworkUtil {
         private static void ReceiveCallback(IAsyncResult ar) {
             SocketState state = (SocketState)ar.AsyncState;
             try {
-                lock (state.data) {
                 int numBytes = state.TheSocket.EndReceive(ar);  //finalizes recieve process
 
                 if (numBytes == 0)
                     throw new Exception("Socket closed during data transfer");
-                //Thread.Sleep(5000);
+
+                lock (state.data) {
                     state.data.Append(Encoding.UTF8.GetString(state.buffer, 0, numBytes)); //appends data from buffer that is converted from bytes to UTF8 text
                 }
                 state.OnNetworkAction(state);
@@ -324,7 +324,8 @@ namespace NetworkUtil {
                 socket.BeginSend(toSend, 0, toSend.Length, SocketFlags.None, SendAndCloseCallback, socket);
             }
             catch {
-                socket.Close();
+                if (null != socket)
+                    socket.Close();
                 return false;
             }
             return true;
@@ -344,13 +345,13 @@ namespace NetworkUtil {
         /// the initial BeginSend is called.
         /// </param>
         private static void SendAndCloseCallback(IAsyncResult ar) {
+            Socket socket = (Socket)ar.AsyncState;
             try {
-                Socket socket = (Socket)ar.AsyncState;
                 socket.EndSend(ar);
                 socket.Close();
             }
             catch {
-
+                socket.Close();
             }
 
         }

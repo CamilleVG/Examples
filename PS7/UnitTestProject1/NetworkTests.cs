@@ -681,11 +681,11 @@ namespace NetworkUtil
             //It will recieve the first message "HelloThere" and will concat that to the string
             //In that time another message "Pan" is sent that alters the socket state buffer
 
-            NetworkTestHelper.WaitForOrTimeout(() => false, 2000);
+            NetworkTestHelper.WaitForOrTimeout(() => false, 500);
 
             Networking.Send(testLocalSocketState.TheSocket, "Pan");
 
-            NetworkTestHelper.WaitForOrTimeout(() => false, 8500);
+            NetworkTestHelper.WaitForOrTimeout(() => false, 2000);
 
             Assert.AreEqual("HelloThere Pan ", data);
         }
