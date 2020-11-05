@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
@@ -14,8 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ClassLibrary1\NetworkTestHelper.csproj" />
-    <ProjectReference Include="..\PS7\NetworkController.csproj" />
+    <ProjectReference Include="..\NetworkController\NetworkController.csproj" />
   </ItemGroup>
 
 </Project>
