@@ -48,14 +48,23 @@ namespace GameController
                 return;
             }
 
+            theServer = state;
+
             // inform the view
             Connected();
 
-            theServer = state;
 
             // Start an event loop to receive messages from the server
             state.OnNetworkAction = ReceiveMessage;
             Networking.GetData(state);
+        }
+
+        /// <summary>
+        /// Sends a message to the server fromt this client
+        /// </summary>
+        /// <param name="text"></param>
+        public void Send(string text) {
+            Networking.Send(theServer.TheSocket, text);
         }
 
         /// <summary>
