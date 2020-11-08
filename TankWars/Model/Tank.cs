@@ -4,7 +4,7 @@ namespace Model {
 
     public class Tank {
 
-        private Vector2D
+        private TankWars.Vector2D
 location { get; set; }
         private int bodyDirection { get; set; }
         private int turretDirection { get; set; }
