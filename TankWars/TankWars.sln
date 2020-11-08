@@ -7,9 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vector2D", "Vector2D\Vector
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resources", "Resources\Resources.csproj", "{250EB873-028F-4673-85FD-BA52382C0C14}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameController", "GameController\GameController.csproj", "{A3FC4CE1-1DCC-43DA-AC18-20B41DE2DFA4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameController", "GameController\GameController.csproj", "{A3FC4CE1-1DCC-43DA-AC18-20B41DE2DFA4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "View", "View\View.csproj", "{54E27E07-0FEE-40D8-9277-2085F006B687}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "View", "View\View.csproj", "{FF87ED9C-68E6-4E31-AF94-21B6C90744AA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Model", "Model\Model.csproj", "{A98FCD30-2228-4718-A37C-623968458900}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -28,10 +30,14 @@ Global
 		{A3FC4CE1-1DCC-43DA-AC18-20B41DE2DFA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3FC4CE1-1DCC-43DA-AC18-20B41DE2DFA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A3FC4CE1-1DCC-43DA-AC18-20B41DE2DFA4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{54E27E07-0FEE-40D8-9277-2085F006B687}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{54E27E07-0FEE-40D8-9277-2085F006B687}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{54E27E07-0FEE-40D8-9277-2085F006B687}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{54E27E07-0FEE-40D8-9277-2085F006B687}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF87ED9C-68E6-4E31-AF94-21B6C90744AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF87ED9C-68E6-4E31-AF94-21B6C90744AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF87ED9C-68E6-4E31-AF94-21B6C90744AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF87ED9C-68E6-4E31-AF94-21B6C90744AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A98FCD30-2228-4718-A37C-623968458900}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A98FCD30-2228-4718-A37C-623968458900}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A98FCD30-2228-4718-A37C-623968458900}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A98FCD30-2228-4718-A37C-623968458900}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
