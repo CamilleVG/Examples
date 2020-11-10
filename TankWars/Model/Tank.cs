@@ -5,11 +5,11 @@ using Newtonsoft.Json.Linq;
 using Resources;
 
 namespace Model {
-
+    [JsonObject(MemberSerialization.OptIn)]
     public class Tank {
 
         [JsonProperty(PropertyName = "tank")]
-        private int ID;
+        private int id;
 
         [JsonProperty(PropertyName = "loc")]
         private Vector2D location;
@@ -37,6 +37,16 @@ namespace Model {
 
         [JsonProperty(PropertyName = "join")]
         private bool joined = false;
+
+        public int ID
+        {
+            get => id;
+        }
+        public bool Disconnected
+        {
+            get => disconnected;
+        }
+
 
         public Tank() {
 

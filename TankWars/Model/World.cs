@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using TankWars;
 
@@ -17,7 +18,8 @@ namespace Model {
 
 
         private Dictionary<int, Tank> Players;
-        private Dictionary<int, Projectiles> Powerups;
+        private Dictionary<int, Projectile> Projectiles;
+        private Dictionary<int, Powerup> Powerups;
 
 
         public World(int size) {
@@ -32,13 +34,72 @@ namespace Model {
         //}
 
         public void setTankData(Tank t) {
-            
+            if (!Players.ContainsKey(t.ID))
+            {
+                Players.Add(t.ID, t);
+            }
+            else
+            {
+                Players[t.ID] = t;
+            }
+
+            if (t.Disconnected)
+            {
+                Players.Remove(t.ID);
+            }
+
+        }
+        public void setProjData(Projectile proj)
+        {
+            if (!Projectiles.ContainsKey(proj.ID))
+            {
+                Projectiles.Add(proj.ID, proj);
+            }
+            else
+            {
+                Projectiles[proj.ID] = proj;
+            }
+
+            if (proj.Died)
+            {
+                Projectiles.Remove(proj.ID);
+            }
 
         }
 
+        public void setPowerupData(Powerup power)
+        {
+            if (!Powerups.ContainsKey(power.ID))
+            {
+                Powerups.Add(power.ID, power);
+            }
+            else
+            {
+                Powerups[power.ID] = power;
+            }
 
-        public bool removePlayer(string name) {
-            return false;
+            if (power.Died)
+            {
+                Powerups.Remove(power.ID);
+            }
+
+        }
+
+        public void setBeamsData(Beam beam)
+        {
+            if (!Powerups.ContainsKey(power.ID))
+            {
+                Powerups.Add(power.ID, power);
+            }
+            else
+            {
+                Powerups[power.ID] = power;
+            }
+
+            if (power.Died)
+            {
+                Powerups.Remove(power.ID);
+            }
 
         }
     }
