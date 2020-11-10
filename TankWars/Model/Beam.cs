@@ -4,11 +4,9 @@ using System.Text;
 using TankWars;
 using Newtonsoft.Json;
 
-namespace Model
-{
+namespace Model {
     [JsonObject(MemberSerialization.OptIn)]
-    class Beam
-    {
+    public class Beam {
         [JsonProperty(PropertyName = "beam")]
         private int id;
 
@@ -21,8 +19,7 @@ namespace Model
         [JsonProperty(PropertyName = "owner")]
         private int ownerID;
 
-        public int ID
-        {
+        public int ID {
             get => id;
         }
     }
