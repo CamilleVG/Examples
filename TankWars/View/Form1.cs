@@ -15,7 +15,7 @@ namespace View {
 
         public Form1() {
             InitializeComponent();
-            controller = new GameController.GameController();
+            controller = new GameController.GameController(2000);
 
             // register handlers for the controller's events
             controller.MessagesArrived += UpdateView;
@@ -56,6 +56,7 @@ namespace View {
         /// </summary>
         /// <param name="messages"></param>
         private void UpdateView(IEnumerable<string> messages) {
+
             foreach (string m in messages)
                 Console.WriteLine(m);
         }
