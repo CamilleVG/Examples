@@ -150,15 +150,19 @@ namespace GameController {
                         break;
 
                     case "proj":
+                        world.setProjData(JsonConvert.DeserializeObject<Projectile>(p));
                         break;
 
                     case "wall":
+                        world.setWall(JsonConvert.DeserializeObject<Wall>(p));
                         break;
 
                     case "beam":
+                        world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
                         break;
 
                     case "power":
+                        world.setPowerupData(JsonConvert.DeserializeObject<Powerup>(p));
                         break;
                 }
 
