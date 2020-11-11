@@ -123,7 +123,7 @@ namespace GameController {
 
                 // build a list of messages to send to the view
                 /*Messages.Add(p);*/
-                
+
                 parseMessage(p);
 
                 // Then remove it from the SocketState's growable buffer
@@ -140,66 +140,63 @@ namespace GameController {
         /// </summary>
         /// <param name="p"></param>
         private void parseMessage(string p) {
-            if (userID == -1)
-            {
-                if (!(Int32.TryParse(p, out userID)))
-                {
+            //Console.WriteLine("Parsing Message " + p); //////////////////////////////////////////////////////////
+            if (userID == -1) {
+                if (!(Int32.TryParse(p, out userID))) {
                     userID = -1;
                     Error("First message sent be server was not the players ID");
                     return;
                 }
             }
-            else if (world.UniverseSize == -1)
-            {
-                if (!(Int32.TryParse(p, out worldSize)))
-                {
+            else if (worldSize == -1) {
+                if (!(Int32.TryParse(p, out worldSize))) {
                     worldSize = -1;
                     Error("First message sent be server was not the players ID");
                     return;
                 }
-                else
-                {
+                else {
                     world = new World(worldSize);
                 }
             }
-            else
-            {
+            else {
                 JObject obj = JObject.Parse(p);
-                JToken token = obj["fieldName"];
 
-                if (null != token)
-                    //if all the walls have been sent and now a new object is sent (that is not a wall), the client can now send commands
-                    if ((!commandsSending) && (!token.ToString().Equals("wall")))
-                    {
-                        commandsSending = true;
-                    }
-                    switch (token.ToString())
-                    {
+                //Console.WriteLine(obj.ContainsKey("wall"));
+                JToken token = obj["wall"]; 
 
-                        case "tank":
-                            world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
-                            break;
 
-                        case "proj":
-                            world.setProjData(JsonConvert.DeserializeObject<Projectile>(p));
-                            break;
+                //if all the walls have been sent and now a new object is sent (that is not a wall), the client can now send commands
+                if ((!commandsSending) && (!token.ToString().Equals("wall"))) {
+                    commandsSending = true;
+                }
 
-                        case "wall":
-                            world.setWall(JsonConvert.DeserializeObject<Wall>(p));
-                            break;
+                switch (token.ToString()) {
 
-                        case "beam":
-                            world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
-                            break;
+                    case "tank":
+                        world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
+                        break;
 
-                        case "power":
-                            world.setPowerupData(JsonConvert.DeserializeObject<Powerup>(p));
-                            break;
-                    }
+                    case "proj":
+                        world.setProjData(JsonConvert.DeserializeObject<Projectile>(p));
+                        break;
+
+                    case "wall":
+                        world.setWall(JsonConvert.DeserializeObject<Wall>(p));
+                        break;
+
+                    case "beam":
+                        world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
+                        break;
+
+                    case "power":
+                        world.setPowerupData(JsonConvert.DeserializeObject<Powerup>(p));
+                        break;
+                }
+
 
             }
 
-            
+
         }
 
         /// <summary>
