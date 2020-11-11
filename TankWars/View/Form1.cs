@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace View
-{
+namespace View {
     public partial class Form1 : Form {
 
         GameController.GameController controller;
@@ -21,7 +26,6 @@ namespace View
 
         private void ConnectButton_Click(object sender, EventArgs e) {
 
-            Console.WriteLine("Connect buttong was clicked.");
             if (ServerTextBox.Text == "") {
                 MessageBox.Show("Please enter a server address");
                 return;
@@ -29,12 +33,6 @@ namespace View
 
             if (NameTextBox.Text == "") {
                 MessageBox.Show("Please enter a valid name");
-                return;
-            }
-
-            if (NameTextBox.Text.Length <= 16)
-            {
-                MessageBox.Show("Name entered is too long");
                 return;
             }
 
@@ -48,18 +46,17 @@ namespace View
         }
         private void HandleConnected() {
             // Just print a message saying we connected
-            Console.WriteLine("Connected to server");
             controller.Send(NameTextBox.Text);
         }
 
         /// <summary>
         /// Method called when JSON is received from the server
-        /// </summary>
+        /// </summary> 
         /// <param name="messages"></param>
         private void UpdateView(IEnumerable<string> messages) {
 
-            foreach (string m in messages)
-                Console.WriteLine(m);
+            //foreach (string m in messages)
+            //    Console.WriteLine(m);
         }
 
 
