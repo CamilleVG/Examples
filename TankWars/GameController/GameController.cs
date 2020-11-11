@@ -8,6 +8,7 @@ using NetworkUtil;
 using Newtonsoft.Json;
 using Model;
 using Newtonsoft.Json.Linq;
+using System.Numerics;
 
 namespace GameController {
 
@@ -27,14 +28,14 @@ namespace GameController {
         /// </summary>
         SocketState theServer = null;
 
+        private int userID = -1;
+        private int worldSize = -1;
+        private bool commandsSending = false;
+
         /// <summary>
         /// Model of the game
         /// </summary>
         World world;
-
-        public GameController(int worldSize) {
-            world = new Model.World(worldSize);
-        }
 
         /// <summary>
         /// Begins the process of connecting to the server
@@ -72,7 +73,7 @@ namespace GameController {
         /// </summary>
         /// <param name="text"></param>
         public void Send(string text) {
-            Networking.Send(theServer.TheSocket, text);
+            Networking.Send(theServer.TheSocket, text + "\n");
         }
 
         /// <summary>
@@ -122,6 +123,7 @@ namespace GameController {
 
                 // build a list of messages to send to the view
                 /*Messages.Add(p);*/
+                
                 parseMessage(p);
 
                 // Then remove it from the SocketState's growable buffer
@@ -138,36 +140,66 @@ namespace GameController {
         /// </summary>
         /// <param name="p"></param>
         private void parseMessage(string p) {
-
-            JObject obj = JObject.Parse(p);
-            JToken token = obj["fieldName"];
-
-            if (null != token)
-                switch (token.ToString()) {
-
-                    case "tank":
-                        world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
-                        break;
-
-                    case "proj":
-                        world.setProjData(JsonConvert.DeserializeObject<Projectile>(p));
-                        break;
-
-                    case "wall":
-                        world.setWall(JsonConvert.DeserializeObject<Wall>(p));
-                        break;
-
-                    case "beam":
-                        world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
-                        break;
-
-                    case "power":
-                        world.setPowerupData(JsonConvert.DeserializeObject<Powerup>(p));
-                        break;
+            if (userID == -1)
+            {
+                if (!(Int32.TryParse(p, out userID)))
+                {
+                    userID = -1;
+                    Error("First message sent be server was not the players ID");
+                    return;
                 }
+            }
+            else if (world.UniverseSize == -1)
+            {
+                if (!(Int32.TryParse(p, out worldSize)))
+                {
+                    worldSize = -1;
+                    Error("First message sent be server was not the players ID");
+                    return;
+                }
+                else
+                {
+                    world = new World(worldSize);
+                }
+            }
+            else
+            {
+                JObject obj = JObject.Parse(p);
+                JToken token = obj["fieldName"];
 
-            JsonConvert.DeserializeObject<Tank>(p);
-            throw new NotImplementedException();
+                if (null != token)
+                    //if all the walls have been sent and now a new object is sent (that is not a wall), the client can now send commands
+                    if ((!commandsSending) && (!token.ToString().Equals("wall")))
+                    {
+                        commandsSending = true;
+                    }
+                    switch (token.ToString())
+                    {
+
+                        case "tank":
+                            world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
+                            break;
+
+                        case "proj":
+                            world.setProjData(JsonConvert.DeserializeObject<Projectile>(p));
+                            break;
+
+                        case "wall":
+                            world.setWall(JsonConvert.DeserializeObject<Wall>(p));
+                            break;
+
+                        case "beam":
+                            world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
+                            break;
+
+                        case "power":
+                            world.setPowerupData(JsonConvert.DeserializeObject<Powerup>(p));
+                            break;
+                    }
+
+            }
+
+            
         }
 
         /// <summary>

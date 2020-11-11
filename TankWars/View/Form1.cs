@@ -1,21 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace View {
+namespace View
+{
     public partial class Form1 : Form {
 
         GameController.GameController controller;
 
         public Form1() {
             InitializeComponent();
-            controller = new GameController.GameController(2000);
+            controller = new GameController.GameController();
 
             // register handlers for the controller's events
             controller.MessagesArrived += UpdateView;
@@ -34,6 +29,12 @@ namespace View {
 
             if (NameTextBox.Text == "") {
                 MessageBox.Show("Please enter a valid name");
+                return;
+            }
+
+            if (NameTextBox.Text.Length <= 16)
+            {
+                MessageBox.Show("Name entered is too long");
                 return;
             }
 
