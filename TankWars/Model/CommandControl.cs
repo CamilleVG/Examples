@@ -21,21 +21,14 @@ namespace Model {
         public Vector2D tDirection;
 
         public bool addCommand(string cmd) {
-            if (activeCommands.First.Value != cmd  && !activeCommands.Contains(cmd))
-            {
-                activeCommands.AddFirst(cmd);
-                moving = activeCommands.First.Value;
-                return true;
-            }
+            activeCommands.AddFirst(cmd);
+            moving = activeCommands.First.Value;
             return false;
         }
 
         public bool removeCommand(string cmd) {
-            if (activeCommands.Remove(cmd))
-            {
-                moving = activeCommands.First.Value;
-                return true;
-            }
+            activeCommands.Remove(cmd);
+            moving = activeCommands.First.Value;
             return false;
         }
 

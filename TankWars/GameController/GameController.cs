@@ -35,7 +35,6 @@ namespace GameController {
         private int worldSize = -1;
         private bool wallsReceived = false;
         private CommandControl commandControl;
-        private bool messagesSending = false;
 
         /// <summary>
         /// Model of the game
@@ -138,7 +137,7 @@ namespace GameController {
             // inform the view
             //MessagesArrived(newMessages);
 
-            
+            Send(JsonConvert.SerializeObject(commandControl));
 
         }
 
@@ -194,11 +193,6 @@ namespace GameController {
                     commandControl = new CommandControl();
                     AllowInput();
                 }
-                if (messagesSending)
-                {
-                    Send(JsonConvert.SerializeObject(commandControl));
-                }
-
             }
         }
 
@@ -211,7 +205,7 @@ namespace GameController {
 
 
         public void SendMoveRequest(string code) {
-            messagesSending = true;
+
             switch (code) {
                 case "W":
                     commandControl.addCommand("up");
@@ -226,7 +220,6 @@ namespace GameController {
                     commandControl.addCommand("right");
                     break;
             }
-            
         }
 
         public void CancelMoveRequest(string code) {
@@ -245,7 +238,6 @@ namespace GameController {
                     commandControl.removeCommand("right");
                     break;
             }
-            Send(JsonConvert.SerializeObject(commandControl));
         }
     }
 }
