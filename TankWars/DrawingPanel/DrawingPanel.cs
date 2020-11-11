@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace View {
+namespace View { 
     public class DrawingPanel : Panel {
         private World theWorld;
         public DrawingPanel(World w) {
