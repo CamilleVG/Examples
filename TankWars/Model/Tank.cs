@@ -47,6 +47,10 @@ namespace Model {
             get => disconnected;
         }
 
+        public bool Died {
+            get => died;
+        }
+
 
         public Tank() {
 

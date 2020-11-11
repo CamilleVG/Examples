@@ -26,7 +26,11 @@ namespace Model {
 
         public World(int size) {
             UniverseSize = size;
-
+            Players = new Dictionary<int, Tank>();
+            Projectiles = new Dictionary<int, Projectile>();
+            Powerups = new Dictionary<int, Powerup>();
+            Beams = new Dictionary<int, Beam>();
+            Walls = new Dictionary<int, Wall>();
         }
 
         /// <summary>
@@ -41,7 +45,7 @@ namespace Model {
                 Players[t.ID] = t;
             }
 
-            if (t.Disconnected) {
+            if (t.Disconnected || t.Died) {
                 Players.Remove(t.ID);
             }
 
