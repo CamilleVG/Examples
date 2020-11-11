@@ -23,6 +23,9 @@ namespace GameController {
         public delegate void ErrorHandler(string err);
         public event ErrorHandler Error;
 
+        public delegate void WallsReceivedHandler();
+        public event WallsReceivedHandler AllowInput;
+
         /// <summary>
         /// State representing the connection with the server
         /// </summary>
@@ -30,7 +33,8 @@ namespace GameController {
 
         private int userID = -1;
         private int worldSize = -1;
-        private bool commandsSending = false;
+        private bool wallsReceived = false;
+        private CommandControl commandControl;
 
         /// <summary>
         /// Model of the game
@@ -133,6 +137,8 @@ namespace GameController {
             // inform the view
             //MessagesArrived(newMessages);
 
+            Send(JsonConvert.SerializeObject(commandControl));
+
         }
 
         /// <summary>
@@ -158,45 +164,36 @@ namespace GameController {
                     world = new World(worldSize);
                 }
             }
+
             else {
                 JObject obj = JObject.Parse(p);
+                JToken token;
 
-                //Console.WriteLine(obj.ContainsKey("wall"));
-                JToken token = obj["wall"]; 
 
+                if ((token = obj["wall"]) != null) {
+                    world.setWall(JsonConvert.DeserializeObject<Wall>(p));
+                    return;
+                }
+                else if ((token = obj["tank"]) != null) {
+                    world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
+                }
+                else if ((token = obj["proj"]) != null) {
+                    world.setProjData(JsonConvert.DeserializeObject<Projectile>(p));
+                }
+                else if ((token = obj["power"]) != null) {
+                    world.setPowerupData(JsonConvert.DeserializeObject<Powerup>(p));
+                }
+                else if ((token = obj["beam"]) != null) {
+                    world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
+                }
 
                 //if all the walls have been sent and now a new object is sent (that is not a wall), the client can now send commands
-                if ((!commandsSending) && (!token.ToString().Equals("wall"))) {
-                    commandsSending = true;
+                if (!wallsReceived) {
+                    wallsReceived = true;
+                    commandControl = new CommandControl();
+                    AllowInput();
                 }
-
-                switch (token.ToString()) {
-
-                    case "tank":
-                        world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
-                        break;
-
-                    case "proj":
-                        world.setProjData(JsonConvert.DeserializeObject<Projectile>(p));
-                        break;
-
-                    case "wall":
-                        world.setWall(JsonConvert.DeserializeObject<Wall>(p));
-                        break;
-
-                    case "beam":
-                        world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
-                        break;
-
-                    case "power":
-                        world.setPowerupData(JsonConvert.DeserializeObject<Powerup>(p));
-                        break;
-                }
-
-
             }
-
-
         }
 
         /// <summary>
@@ -206,13 +203,41 @@ namespace GameController {
             theServer?.TheSocket.Close();
         }
 
-        /// <summary>
-        /// Send a message to the server
-        /// </summary>
-        /// <param name="message"></param>
-        public void MessageEntered(string message) {
-            if (theServer != null)
-                Networking.Send(theServer.TheSocket, message + "\n");
+
+        public void SendMoveRequest(string code) {
+
+            switch (code) {
+                case "W":
+                    commandControl.addCommand("up");
+                    break;
+                case "A":
+                    commandControl.addCommand("left");
+                    break;
+                case "S":
+                    commandControl.addCommand("down");
+                    break;
+                case "D":
+                    commandControl.addCommand("right");
+                    break;
+            }
+        }
+
+        public void CancelMoveRequest(string code) {
+
+            switch (code) {
+                case "W":
+                    commandControl.removeCommand("up");
+                    break;
+                case "A":
+                    commandControl.removeCommand("left");
+                    break;
+                case "S":
+                    commandControl.removeCommand("down");
+                    break;
+                case "D":
+                    commandControl.removeCommand("right");
+                    break;
+            }
         }
     }
 }
