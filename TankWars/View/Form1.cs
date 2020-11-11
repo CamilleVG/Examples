@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.Windows.Forms;
 
-namespace View
-{
+namespace View {
     public partial class Form1 : Form {
 
         GameController.GameController controller;
@@ -16,6 +15,9 @@ namespace View
             controller.MessagesArrived += UpdateView;
             controller.Error += ShowError;
             controller.Connected += HandleConnected;
+            controller.AllowInput += startListeningToKeys;
+            this.KeyDown += HandleKeyDown;
+            this.KeyUp += HandleKeyUp;
         }
 
 
@@ -32,8 +34,7 @@ namespace View
                 return;
             }
 
-            if (NameTextBox.Text.Length >= 16)
-            {
+            if (NameTextBox.Text.Length >= 16) {
                 MessageBox.Show("Name entered is too long");
                 return;
             }
@@ -70,6 +71,38 @@ namespace View
 
         }
 
+        private void startListeningToKeys() {
+            // Enable the global form to capture key presses
+            KeyPreview = true;
+        }
+
+        /// <summary>
+        /// Key down handler
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void HandleKeyDown(object sender, KeyEventArgs e) {
+            controller.SendMoveRequest(e.KeyCode.ToString());
+
+            // Prevent other key handlers from running
+            Console.WriteLine(e.KeyCode.ToString());
+            e.SuppressKeyPress = true;
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// Key up handler
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void HandleKeyUp(object sender, KeyEventArgs e) {
+            controller.CancelMoveRequest(e.KeyCode.ToString());
+
+            // Prevent other key handlers from running
+            Console.WriteLine(e.KeyCode.ToString() + " Up");
+            e.SuppressKeyPress = true;
+            e.Handled = true;
+        }
 
     }
 }
