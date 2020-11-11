@@ -4,6 +4,7 @@ using System.Windows.Forms;
 
 namespace View
 {
+
     public partial class Form1 : Form {
 
         GameController.GameController controller;
