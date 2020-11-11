@@ -5,13 +5,13 @@ VisualStudioVersion = 16.0.30523.141
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vector2D", "Vector2D\Vector2D.csproj", "{B7AA85D1-4111-481B-A437-D39633772067}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resources", "Resources\Resources.csproj", "{250EB873-028F-4673-85FD-BA52382C0C14}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameController", "GameController\GameController.csproj", "{A3FC4CE1-1DCC-43DA-AC18-20B41DE2DFA4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "View", "View\View.csproj", "{FF87ED9C-68E6-4E31-AF94-21B6C90744AA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Model", "Model\Model.csproj", "{A98FCD30-2228-4718-A37C-623968458900}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Model", "Model\Model.csproj", "{A98FCD30-2228-4718-A37C-623968458900}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resources", "Resources\Resources.csproj", "{D2C80061-0E9C-456F-A45F-57B0B61B71F9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,9 +23,6 @@ Global
 		{B7AA85D1-4111-481B-A437-D39633772067}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B7AA85D1-4111-481B-A437-D39633772067}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B7AA85D1-4111-481B-A437-D39633772067}.Release|Any CPU.Build.0 = Release|Any CPU
-		{250EB873-028F-4673-85FD-BA52382C0C14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{250EB873-028F-4673-85FD-BA52382C0C14}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{250EB873-028F-4673-85FD-BA52382C0C14}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A3FC4CE1-1DCC-43DA-AC18-20B41DE2DFA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A3FC4CE1-1DCC-43DA-AC18-20B41DE2DFA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3FC4CE1-1DCC-43DA-AC18-20B41DE2DFA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -38,6 +35,9 @@ Global
 		{A98FCD30-2228-4718-A37C-623968458900}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A98FCD30-2228-4718-A37C-623968458900}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A98FCD30-2228-4718-A37C-623968458900}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2C80061-0E9C-456F-A45F-57B0B61B71F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2C80061-0E9C-456F-A45F-57B0B61B71F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2C80061-0E9C-456F-A45F-57B0B61B71F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
