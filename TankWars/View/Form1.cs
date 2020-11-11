@@ -32,7 +32,7 @@ namespace View
                 return;
             }
 
-            if (NameTextBox.Text.Length <= 16)
+            if (NameTextBox.Text.Length >= 16)
             {
                 MessageBox.Show("Name entered is too long");
                 return;
@@ -58,8 +58,8 @@ namespace View
         /// <param name="messages"></param>
         private void UpdateView(IEnumerable<string> messages) {
 
-            foreach (string m in messages)
-                Console.WriteLine(m);
+            //foreach (string m in messages)
+            //    Console.WriteLine(m);
         }
 
 
