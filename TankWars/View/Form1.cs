@@ -99,7 +99,7 @@ namespace View {
             controller.CancelMoveRequest(e.KeyCode.ToString());
 
             // Prevent other key handlers from running
-            Console.WriteLine(e.KeyCode.ToString() + " Up");
+            Console.WriteLine(e.KeyCode.ToString() + " Released");
             e.SuppressKeyPress = true;
             e.Handled = true;
         }

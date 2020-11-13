@@ -32,9 +32,9 @@ namespace GameController {
         SocketState theServer = null;
 
         private int userID = -1;
-        private int worldSize = -1;
         private bool wallsReceived = false;
         private CommandControl commandControl;
+        private bool messagesSending = false;
 
         /// <summary>
         /// Model of the game
@@ -109,15 +109,14 @@ namespace GameController {
 
             string s = getNextFullMessage(state);
             if (s != "") {
+                int worldSize = -1;
                 if (!(Int32.TryParse(s, out worldSize))) {
                     worldSize = -1;
                     Error("First message sent be server was not the players ID");
                     return;
                 }
-                state.OnNetworkAction = ReceiveMessage;
-            }
-            else {
                 world = new World(worldSize);
+                state.OnNetworkAction = ReceiveMessage;
             }
             Networking.GetData(state);
         }
@@ -134,12 +133,10 @@ namespace GameController {
                 Error("Lost connection to server");
                 return;
             }
-            string nextMsg = getNextFullMessage(state);
-            if (nextMsg != "")
-                parseMessage(nextMsg);
-            //ProcessMessages(state);
-
-            Send(JsonConvert.SerializeObject(commandControl));
+            //string nextMsg = getNextFullMessage(state);
+            //if (nextMsg != "")
+            //    parseMessage(nextMsg);
+            ProcessMessages(state);
 
             // Continue the event loop
             // state.OnNetworkAction has not been changed, 
@@ -153,34 +150,34 @@ namespace GameController {
         /// Then inform the view
         /// </summary>
         /// <param name="state"></param>
-        //private void ProcessMessages(SocketState state) {
-        //    string totalData = state.GetData();
-        //    string[] parts = Regex.Split(totalData, @"(?<=[\n])");
+        private void ProcessMessages(SocketState state)
+        {
+            string totalData = state.GetData();
+            string[] parts = Regex.Split(totalData, @"(?<=[\n])");
 
-        //    // Loop until we have processed all messages.
-        //    // We may have received more than one.
+            // Loop until we have processed all messages.
+            // We may have received more than one.
 
-        //    foreach (string p in parts) {
-        //        // Ignore empty strings added by the regex splitter
-        //        if (p.Length == 0)
-        //            continue;
+            foreach (string p in parts)
+            {
+                // Ignore empty strings added by the regex splitter
+                if (p.Length == 0)
+                    continue;
 
-        //        // The regex splitter will include the last string even if it doesn't end with a '\n',
-        //        // So we need to ignore it if this happens. 
-        //        if (p[p.Length - 1] != '\n')
-        //            break;
+                // The regex splitter will include the last string even if it doesn't end with a '\n',
+                // So we need to ignore it if this happens. 
+                if (p[p.Length - 1] != '\n')
+                    break;
 
-        //        parseMessage(p);
+                parseMessage(p);
 
-        //        // Then remove it from the SocketState's growable buffer
-        //        state.RemoveData(0, p.Length);
-        //    }
+                // Then remove it from the SocketState's growable buffer
+                state.RemoveData(0, p.Length);
+            }
 
-        //    // inform the view
-        //    //MessagesArrived(newMessages);
-
-        //    Send(JsonConvert.SerializeObject(commandControl));
-        //}
+            // inform the view
+            //MessagesArrived(newMessages);
+        }
 
         private string getNextFullMessage(SocketState state) {
             string totalData = state.GetData();
@@ -245,6 +242,12 @@ namespace GameController {
                 commandControl = new CommandControl();
                 AllowInput();
             }
+            if (messagesSending)
+            {
+                Console.WriteLine(JsonConvert.SerializeObject(commandControl));
+                Send(JsonConvert.SerializeObject(commandControl));
+            }
+            
         }
 
         /// <summary>
@@ -256,7 +259,7 @@ namespace GameController {
 
 
         public void SendMoveRequest(string code) {
-
+            messagesSending = true;
             switch (code) {
                 case "W":
                     commandControl.addCommand("up");
@@ -271,10 +274,11 @@ namespace GameController {
                     commandControl.addCommand("right");
                     break;
             }
+            
         }
 
         public void CancelMoveRequest(string code) {
-
+            messagesSending = true;
             switch (code) {
                 case "W":
                     commandControl.removeCommand("up");
