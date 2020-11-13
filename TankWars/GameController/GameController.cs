@@ -63,12 +63,12 @@ namespace GameController {
 
             theServer = state;
 
-            // inform the view
+            // inform the view, which will call send with the player's name
             Connected();
 
 
             // Start an event loop to receive messages from the server
-            state.OnNetworkAction = ReceiveMessage;
+            state.OnNetworkAction = HandleUserID;
             Networking.GetData(state);
         }
 
@@ -79,6 +79,49 @@ namespace GameController {
         public void Send(string text) {
             Networking.Send(theServer.TheSocket, text + "\n");
         }
+
+        private void HandleUserID(SocketState state) {
+            if (state.ErrorOccured) {
+                // inform the view
+                Error("Lost connection to server");
+                return;
+            }
+
+            string id = getNextFullMessage(state);
+
+            if (id != "") {
+
+                if (!(Int32.TryParse(id, out userID))) {
+                    Error("First message sent be server was not the players ID");
+                    return;
+                }
+                state.OnNetworkAction = HandleWorldSize;
+            }
+            Networking.GetData(state);
+        }
+
+        private void HandleWorldSize(SocketState state) {
+            if (state.ErrorOccured) {
+                // inform the view
+                Error("Lost connection to server");
+                return;
+            }
+
+            string s = getNextFullMessage(state);
+            if (s != "") {
+                if (!(Int32.TryParse(s, out worldSize))) {
+                    worldSize = -1;
+                    Error("First message sent be server was not the players ID");
+                    return;
+                }
+                state.OnNetworkAction = ReceiveMessage;
+            }
+            else {
+                world = new World(worldSize);
+            }
+            Networking.GetData(state);
+        }
+
 
         /// <summary>
         /// Method to be invoked by the networking library when 
@@ -91,8 +134,12 @@ namespace GameController {
                 Error("Lost connection to server");
                 return;
             }
+            string nextMsg = getNextFullMessage(state);
+            if (nextMsg != "")
+                parseMessage(nextMsg);
+            //ProcessMessages(state);
 
-            ProcessMessages(state);
+            Send(JsonConvert.SerializeObject(commandControl));
 
             // Continue the event loop
             // state.OnNetworkAction has not been changed, 
@@ -106,39 +153,61 @@ namespace GameController {
         /// Then inform the view
         /// </summary>
         /// <param name="state"></param>
-        private void ProcessMessages(SocketState state) {
+        //private void ProcessMessages(SocketState state) {
+        //    string totalData = state.GetData();
+        //    string[] parts = Regex.Split(totalData, @"(?<=[\n])");
+
+        //    // Loop until we have processed all messages.
+        //    // We may have received more than one.
+
+        //    foreach (string p in parts) {
+        //        // Ignore empty strings added by the regex splitter
+        //        if (p.Length == 0)
+        //            continue;
+
+        //        // The regex splitter will include the last string even if it doesn't end with a '\n',
+        //        // So we need to ignore it if this happens. 
+        //        if (p[p.Length - 1] != '\n')
+        //            break;
+
+        //        parseMessage(p);
+
+        //        // Then remove it from the SocketState's growable buffer
+        //        state.RemoveData(0, p.Length);
+        //    }
+
+        //    // inform the view
+        //    //MessagesArrived(newMessages);
+
+        //    Send(JsonConvert.SerializeObject(commandControl));
+        //}
+
+        private string getNextFullMessage(SocketState state) {
             string totalData = state.GetData();
             string[] parts = Regex.Split(totalData, @"(?<=[\n])");
-
             // Loop until we have processed all messages.
             // We may have received more than one.
 
-            List<string> newMessages = new List<string>();
+            //foreach (string p in parts) {
+            // Ignore empty strings added by the regex splitter
+            string p = parts[0];
+            if (p.Length == 0)
+                //continue;
+                return "";
 
-            foreach (string p in parts) {
-                // Ignore empty strings added by the regex splitter
-                if (p.Length == 0)
-                    continue;
+            // The regex splitter will include the last string even if it doesn't end with a '\n',
+            // So we need to ignore it if this happens. 
+            if (p[p.Length - 1] != '\n')
+                return "";
 
-                // The regex splitter will include the last string even if it doesn't end with a '\n',
-                // So we need to ignore it if this happens. 
-                if (p[p.Length - 1] != '\n')
-                    break;
-
-                // build a list of messages to send to the view
-                /*Messages.Add(p);*/
-
-                parseMessage(p);
-
-                // Then remove it from the SocketState's growable buffer
-                state.RemoveData(0, p.Length);
-            }
-
+            // Then remove it from the SocketState's growable buffer
+            state.RemoveData(0, p.Length);
+            //}
+            return p;
             // inform the view
             //MessagesArrived(newMessages);
 
-            Send(JsonConvert.SerializeObject(commandControl));
-
+            //Send(JsonConvert.SerializeObject(commandControl));
         }
 
         /// <summary>
@@ -147,52 +216,34 @@ namespace GameController {
         /// <param name="p"></param>
         private void parseMessage(string p) {
             //Console.WriteLine("Parsing Message " + p); //////////////////////////////////////////////////////////
-            if (userID == -1) {
-                if (!(Int32.TryParse(p, out userID))) {
-                    userID = -1;
-                    Error("First message sent be server was not the players ID");
-                    return;
-                }
+
+
+            JObject obj = JObject.Parse(p);
+            JToken token;
+
+
+            if ((token = obj["wall"]) != null) {
+                world.setWall(JsonConvert.DeserializeObject<Wall>(p));
+                return;
             }
-            else if (worldSize == -1) {
-                if (!(Int32.TryParse(p, out worldSize))) {
-                    worldSize = -1;
-                    Error("First message sent be server was not the players ID");
-                    return;
-                }
-                else {
-                    world = new World(worldSize);
-                }
+            else if ((token = obj["tank"]) != null) {
+                world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
+            }
+            else if ((token = obj["proj"]) != null) {
+                world.setProjData(JsonConvert.DeserializeObject<Projectile>(p));
+            }
+            else if ((token = obj["power"]) != null) {
+                world.setPowerupData(JsonConvert.DeserializeObject<Powerup>(p));
+            }
+            else if ((token = obj["beam"]) != null) {
+                world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
             }
 
-            else {
-                JObject obj = JObject.Parse(p);
-                JToken token;
-
-
-                if ((token = obj["wall"]) != null) {
-                    world.setWall(JsonConvert.DeserializeObject<Wall>(p));
-                    return;
-                }
-                else if ((token = obj["tank"]) != null) {
-                    world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
-                }
-                else if ((token = obj["proj"]) != null) {
-                    world.setProjData(JsonConvert.DeserializeObject<Projectile>(p));
-                }
-                else if ((token = obj["power"]) != null) {
-                    world.setPowerupData(JsonConvert.DeserializeObject<Powerup>(p));
-                }
-                else if ((token = obj["beam"]) != null) {
-                    world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
-                }
-
-                //if all the walls have been sent and now a new object is sent (that is not a wall), the client can now send commands
-                if (!wallsReceived) {
-                    wallsReceived = true;
-                    commandControl = new CommandControl();
-                    AllowInput();
-                }
+            //if all the walls have been sent and now a new object is sent (that is not a wall), the client can now send commands
+            if (!wallsReceived) {
+                wallsReceived = true;
+                commandControl = new CommandControl();
+                AllowInput();
             }
         }
 
