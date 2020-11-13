@@ -6,20 +6,34 @@ namespace View {
     public partial class Form1 : Form {
 
         GameController.GameController controller;
+        // This simple form only has two components
+        DrawingPanel drawingPanel;
+        Button startButton;
+        Label nameLabel;
+        TextBox nameText;
 
+        private const int viewSize = 500;
+        private const int menuSize = 40;
         public Form1() {
             InitializeComponent();
             controller = new GameController.GameController();
+            
 
-            // register handlers for the controller's events
-            controller.MessagesArrived += UpdateView;
+        // register handlers for the controller's events
+        controller.MessagesArrived += UpdateView;
             controller.Error += ShowError;
             controller.Connected += HandleConnected;
             controller.AllowInput += startListeningToKeys;
             this.KeyDown += HandleKeyDown;
             this.KeyUp += HandleKeyUp;
+            drawingPanel.MouseDown += HandleMouseDown;
+            drawingPanel.MouseUp += HandleMouseUp;
         }
 
+        private void HandleMouseUp(object sender, MouseEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
 
         private void ConnectButton_Click(object sender, EventArgs e) {
 
@@ -61,6 +75,9 @@ namespace View {
 
             //foreach (string m in messages)
             //    Console.WriteLine(m);
+            Invoke(new MethodInvoker(() => this.Invalidate(true)));
+            System.Drawing.Point mouse = System.Windows.Forms.Cursor.Position;
+            controller.UpdateMousePosition(mouse.X, mouse.Y);
         }
 
 
@@ -104,6 +121,16 @@ namespace View {
             e.Handled = true;
         }
 
+        /// <summary>
+        /// Handle mouse down
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void HandleMouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+                controller.HandleMouseRequest();
+        }
     }
 }
 
