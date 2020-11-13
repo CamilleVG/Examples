@@ -72,6 +72,11 @@ namespace GameController {
             Networking.GetData(state);
         }
 
+        public void UpdateMousePosition(int x, int y)
+        {
+            
+        }
+
         /// <summary>
         /// Sends a message to the server fromt this client
         /// </summary>
@@ -119,6 +124,11 @@ namespace GameController {
                 state.OnNetworkAction = ReceiveMessage;
             }
             Networking.GetData(state);
+        }
+
+        public void HandleMouseRequest()
+        {
+            throw new NotImplementedException();
         }
 
 

@@ -16,10 +16,11 @@ namespace Model {
         // How many ms must pass before a defeated tank can respawn
         public int RespawnRate { get; private set; }
 
+
         // Dictionary collection that stores the states of things
-        private Dictionary<int, Tank> Players;
+        public Dictionary<int, Tank> Players;
         private Dictionary<int, Projectile> Projectiles;
-        private Dictionary<int, Powerup> Powerups;
+        public Dictionary<int, Powerup> Powerups;
         private Dictionary<int, Beam> Beams;
         private Dictionary<int, Wall> Walls;
 
