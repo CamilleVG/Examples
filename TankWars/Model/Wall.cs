@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using TankWars;
 using Newtonsoft.Json;
+using Resources;
 
 namespace Model
 {
@@ -15,13 +16,36 @@ namespace Model
         // CHECK THESE POINTS -- TODO
 
         [JsonProperty(PropertyName = "p1")]
-        private Vector2D onePoint;
+        private Vector2D firstPoint;
 
         [JsonProperty(PropertyName = "p2")]
-        private Vector2D otherPoint;
+        private Vector2D secondPoint;
+
+        public int orientation;
 
         public int ID {
             get => id;
+        }
+
+        public Vector2D FirstPoint
+        {
+            get => firstPoint;
+        }
+        public Vector2D SecondPoint
+        {
+            get => secondPoint;
+        }
+
+        public void Orient()
+        {
+            if (firstPoint.GetX() == secondPoint.GetX()){
+                orientation = Constants.VERTICAL;  
+
+            }
+            else
+            {
+                orientation = Constants.HORIZONTAL;
+            }
         }
     }
 }

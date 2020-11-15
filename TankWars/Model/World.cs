@@ -19,10 +19,10 @@ namespace Model {
 
         // Dictionary collection that stores the states of things
         public Dictionary<int, Tank> Players;
-        private Dictionary<int, Projectile> Projectiles;
+        public Dictionary<int, Projectile> Projectiles;
         public Dictionary<int, Powerup> Powerups;
-        private Dictionary<int, Beam> Beams;
-        private Dictionary<int, Wall> Walls;
+        public Dictionary<int, Beam> Beams;
+        public Dictionary<int, Wall> Walls;
 
 
         public World(int size) {
@@ -32,6 +32,7 @@ namespace Model {
             Powerups = new Dictionary<int, Powerup>();
             Beams = new Dictionary<int, Beam>();
             Walls = new Dictionary<int, Wall>();
+
         }
 
         /// <summary>
@@ -118,6 +119,7 @@ namespace Model {
             else {
                 Walls[wall.ID] = wall;
             }
+            wall.Orient(); //calculates whether the wall is horizontal or vertical for the drawing panel
 
         }
     }

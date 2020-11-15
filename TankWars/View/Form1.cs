@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using Resources;
 
 namespace View {
     public partial class Form1 : Form {
@@ -11,8 +12,6 @@ namespace View {
         World theWorld;
         DrawingPanel drawingPanel;
 
-        private const int viewSize = 500;
-        private const int menuSize = 40;
         public Form1() {
 
             InitializeComponent();
@@ -69,9 +68,8 @@ namespace View {
         /// <param name="messages"></param>
         private void UpdateView() {
 
-            //foreach (string m in messages)
-            //    Console.WriteLine(m);
-            Invoke(new MethodInvoker(() => this.Invalidate(true)));
+            //this.Invoke(new MethodInvoker(() => this.Update()));
+            this.Invoke(new MethodInvoker(() => this.Invalidate(true)));
             System.Drawing.Point mouse = System.Windows.Forms.Cursor.Position;
             controller.UpdateMousePosition(mouse.X, mouse.Y);
         }
@@ -85,13 +83,10 @@ namespace View {
         }
 
         private void StartGameFunctionality() {
-
-            theWorld = controller.GetWorld();
-
             // Place and add the drawing panel
-            drawingPanel = new DrawingPanel(theWorld);
-            drawingPanel.Location = new Point(0, menuSize);
-            drawingPanel.Size = new Size(viewSize, viewSize);
+            drawingPanel = new DrawingPanel(controller);
+            drawingPanel.Location = new Point(0, 40);
+            drawingPanel.Size = new Size(Constants.VIEWSIZE, Constants.VIEWSIZE);
             this.Invoke(new MethodInvoker(() => { this.Controls.Add(drawingPanel); }));
 
             drawingPanel.MouseDown += HandleMouseDown;
@@ -110,7 +105,6 @@ namespace View {
             controller.SendMoveRequest(e.KeyCode.ToString());
 
             // Prevent other key handlers from running
-            Console.WriteLine(e.KeyCode.ToString());
             e.SuppressKeyPress = true;
             e.Handled = true;
         }
@@ -137,8 +131,10 @@ namespace View {
         private void HandleMouseDown(object sender, MouseEventArgs e) {
             if (e.Button == MouseButtons.Left)
                 controller.HandleMouseRequest();
+            
         }
     }
+
 }
 
 

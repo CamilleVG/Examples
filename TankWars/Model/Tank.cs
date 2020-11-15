@@ -51,6 +51,11 @@ namespace Model {
             get => died;
         }
 
+        public Vector2D Location
+        {
+            get => location;
+        }
+
 
         public Tank() {
 
