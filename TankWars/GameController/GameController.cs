@@ -8,6 +8,8 @@ using NetworkUtil;
 using Newtonsoft.Json;
 using Model;
 using Newtonsoft.Json.Linq;
+using TankWars;
+
 using System.Numerics;
 
 namespace GameController {
@@ -36,6 +38,7 @@ namespace GameController {
         private int userID = -1;
         private bool wallsReceived = false;
         private bool messagesSending = false;
+        private Vector2D lastUserLocation = new Vector2D(0,0);
 
         /// <summary>
         /// Model of the game
@@ -45,6 +48,14 @@ namespace GameController {
         // Used to provide the world to the view
         public World GetWorld() {
             return world;
+        }
+        public double GetPlayerX()
+        {
+            return lastUserLocation.GetX();
+        }
+        public double GetPlayerY()
+        {
+            return lastUserLocation.GetX();
         }
 
         /// <summary>
@@ -101,7 +112,7 @@ namespace GameController {
             }
 
             string id = getNextFullMessage(state);
-
+            
             if (id != "") {
 
                 if (!(Int32.TryParse(id, out userID))) {
@@ -110,6 +121,7 @@ namespace GameController {
                 }
                 state.OnNetworkAction = HandleWorldSize;
             }
+            Console.WriteLine("Recieved User ID:" + userID);
             Networking.GetData(state);
         }
 
@@ -244,6 +256,10 @@ namespace GameController {
             }
             else if ((token = obj["tank"]) != null) {
                 world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
+                if (world.Players.ContainsKey(userID))
+                {
+                    lastUserLocation = world.Players[userID].Location;
+                }
             }
             else if ((token = obj["proj"]) != null) {
                 world.setProjData(JsonConvert.DeserializeObject<Projectile>(p));
