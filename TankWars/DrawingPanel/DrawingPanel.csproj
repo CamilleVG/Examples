@@ -49,9 +49,21 @@
     <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\GameController\GameController.csproj">
+      <Project>{a3fc4ce1-1dcc-43da-ac18-20b41de2dfa4}</Project>
+      <Name>GameController</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Model\Model.csproj">
       <Project>{a98fcd30-2228-4718-a37c-623968458900}</Project>
       <Name>Model</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Resources\Resources.csproj">
+      <Project>{d2c80061-0e9c-456f-a45f-57b0b61b71f9}</Project>
+      <Name>Resources</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Vector2D\Vector2D.csproj">
+      <Project>{b7aa85d1-4111-481b-a437-d39633772067}</Project>
+      <Name>Vector2D</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
