@@ -8,8 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Model;
-using System.IO;
-using System.Reflection;
 
 namespace View {
     public class DrawingPanel : Panel {
@@ -120,7 +118,6 @@ namespace View {
         // This method is invoked when the DrawingPanel needs to be re-drawn
         protected override void OnPaint(PaintEventArgs e) {
             using (System.Drawing.SolidBrush redBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Red)) {
-                Console.WriteLine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
                 Image background = Image.FromFile("..\\..\\..\\Resources\\Images\\Background.png");
                 e.Graphics.DrawImage(background, 0, 0);
             }
