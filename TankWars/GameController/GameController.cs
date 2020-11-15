@@ -14,8 +14,8 @@ namespace GameController {
 
     public class GameController {
         // Controller events that the view can subscribe to
-        public delegate void MessageHandler(IEnumerable<string> messages);
-        public event MessageHandler MessagesArrived;
+        public delegate void updateReceived();
+        public event updateReceived newInformation;
 
         public delegate void ConnectedHandler();
         public event ConnectedHandler Connected;
@@ -31,15 +31,21 @@ namespace GameController {
         /// </summary>
         SocketState theServer = null;
 
+        private CommandControl commandControl;
+
         private int userID = -1;
         private bool wallsReceived = false;
-        private CommandControl commandControl;
         private bool messagesSending = false;
 
         /// <summary>
         /// Model of the game
         /// </summary>
         World world;
+
+        // Used to provide the world to the view
+        public World GetWorld() {
+            return world;
+        }
 
         /// <summary>
         /// Begins the process of connecting to the server
@@ -62,6 +68,8 @@ namespace GameController {
             }
 
             theServer = state;
+            //world = new World(worldSize);
+
 
             // inform the view, which will call send with the player's name
             Connected();
@@ -128,7 +136,7 @@ namespace GameController {
 
         public void HandleMouseRequest()
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
 
@@ -147,6 +155,7 @@ namespace GameController {
             //if (nextMsg != "")
             //    parseMessage(nextMsg);
             ProcessMessages(state);
+            newInformation();
 
             // Continue the event loop
             // state.OnNetworkAction has not been changed, 
@@ -254,7 +263,7 @@ namespace GameController {
             }
             if (messagesSending)
             {
-                Console.WriteLine(JsonConvert.SerializeObject(commandControl));
+                //Console.WriteLine(JsonConvert.SerializeObject(commandControl));
                 Send(JsonConvert.SerializeObject(commandControl));
             }
             

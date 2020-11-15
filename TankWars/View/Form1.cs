@@ -1,38 +1,34 @@
-﻿using System;
+﻿using Model;
+using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace View {
     public partial class Form1 : Form {
 
         GameController.GameController controller;
-        // This simple form only has two components
+        World theWorld;
         DrawingPanel drawingPanel;
-        Button startButton;
-        Label nameLabel;
-        TextBox nameText;
 
         private const int viewSize = 500;
         private const int menuSize = 40;
         public Form1() {
+
             InitializeComponent();
             controller = new GameController.GameController();
-            
 
-        // register handlers for the controller's events
-        controller.MessagesArrived += UpdateView;
+            // register handlers for the controller's events
+            controller.newInformation += UpdateView;
             controller.Error += ShowError;
             controller.Connected += HandleConnected;
-            controller.AllowInput += startListeningToKeys;
+            controller.AllowInput += StartGameFunctionality;
             this.KeyDown += HandleKeyDown;
             this.KeyUp += HandleKeyUp;
-            drawingPanel.MouseDown += HandleMouseDown;
-            drawingPanel.MouseUp += HandleMouseUp;
         }
 
-        private void HandleMouseUp(object sender, MouseEventArgs e)
-        {
-            throw new NotImplementedException();
+        private void HandleMouseUp(object sender, MouseEventArgs e) {
+            //throw new NotImplementedException();
         }
 
         private void ConnectButton_Click(object sender, EventArgs e) {
@@ -71,7 +67,7 @@ namespace View {
         /// Method called when JSON is received from the server
         /// </summary>
         /// <param name="messages"></param>
-        private void UpdateView(IEnumerable<string> messages) {
+        private void UpdateView() {
 
             //foreach (string m in messages)
             //    Console.WriteLine(m);
@@ -88,7 +84,19 @@ namespace View {
 
         }
 
-        private void startListeningToKeys() {
+        private void StartGameFunctionality() {
+
+            theWorld = controller.GetWorld();
+
+            // Place and add the drawing panel
+            drawingPanel = new DrawingPanel(theWorld);
+            drawingPanel.Location = new Point(0, menuSize);
+            drawingPanel.Size = new Size(viewSize, viewSize);
+            this.Invoke(new MethodInvoker(() => { this.Controls.Add(drawingPanel); }));
+
+            drawingPanel.MouseDown += HandleMouseDown;
+            drawingPanel.MouseUp += HandleMouseUp;
+
             // Enable the global form to capture key presses
             KeyPreview = true;
         }
@@ -126,8 +134,7 @@ namespace View {
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void HandleMouseDown(object sender, MouseEventArgs e)
-        {
+        private void HandleMouseDown(object sender, MouseEventArgs e) {
             if (e.Button == MouseButtons.Left)
                 controller.HandleMouseRequest();
         }

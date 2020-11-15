@@ -93,6 +93,10 @@
       <Project>{a3fc4ce1-1dcc-43da-ac18-20b41de2dfa4}</Project>
       <Name>GameController</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Model\Model.csproj">
+      <Project>{a98fcd30-2228-4718-a37c-623968458900}</Project>
+      <Name>Model</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
