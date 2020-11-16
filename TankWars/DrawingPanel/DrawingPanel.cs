@@ -148,10 +148,11 @@ namespace View
             Image background = Image.FromFile("..\\..\\..\\Resources\\Images\\Background.png");
             e.Graphics.DrawImage(background, 0, 0);
 
-            Console.WriteLine("Reached line 134 in DP:  Player x position is ");
+            
             double playerX = controller.GetPlayerX();
             double playerY = controller.GetPlayerY();
-            
+            Console.WriteLine("Player X:" + playerX);
+            Console.WriteLine("Player Y:" + playerY);
 
             // calculate view/world size ratio
             int worldSize = theWorld.UniverseSize;

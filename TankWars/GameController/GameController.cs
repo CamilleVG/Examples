@@ -36,8 +36,6 @@ namespace GameController {
         private CommandControl commandControl;
 
         private int userID = -1;
-        private bool wallsReceived = false;
-        private bool messagesSending = false;
         private Vector2D lastUserLocation = new Vector2D(0,0);
 
         /// <summary>
@@ -55,7 +53,7 @@ namespace GameController {
         }
         public double GetPlayerY()
         {
-            return lastUserLocation.GetX();
+            return lastUserLocation.GetY();
         }
 
         /// <summary>
@@ -141,7 +139,38 @@ namespace GameController {
                     return;
                 }
                 world = new World(worldSize);
-                state.OnNetworkAction = ReceiveMessage;
+                state.OnNetworkAction = HandleWalls;
+            }
+            Networking.GetData(state);
+        }
+        private void HandleWalls(SocketState state)
+        {
+            if (state.ErrorOccured)
+            {
+                // inform the view
+                Error("Lost connection to server");
+                return;
+            }
+
+            //if all the walls have been sent and now a new object is sent (that is not a wall), the client can now send commands
+
+            string p = getNextFullMessage(state);
+            if (p != "")
+            {
+                JObject obj = JObject.Parse(p);
+                JToken token;
+
+
+                if ((token = obj["wall"]) != null)
+                {
+                    world.setWall(JsonConvert.DeserializeObject<Wall>(p));
+                }
+                else
+                {
+                    commandControl = new CommandControl();
+                    AllowInput();
+                    state.OnNetworkAction = ReceiveMessage;
+                }
             }
             Networking.GetData(state);
         }
@@ -249,12 +278,7 @@ namespace GameController {
             JObject obj = JObject.Parse(p);
             JToken token;
 
-
-            if ((token = obj["wall"]) != null) {
-                world.setWall(JsonConvert.DeserializeObject<Wall>(p));
-                return;
-            }
-            else if ((token = obj["tank"]) != null) {
+            if ((token = obj["tank"]) != null) {
                 world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
                 if (world.Players.ContainsKey(userID))
                 {
@@ -270,19 +294,6 @@ namespace GameController {
             else if ((token = obj["beam"]) != null) {
                 world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
             }
-
-            //if all the walls have been sent and now a new object is sent (that is not a wall), the client can now send commands
-            if (!wallsReceived) {
-                wallsReceived = true;
-                commandControl = new CommandControl();
-                AllowInput();
-            }
-            if (messagesSending)
-            {
-                //Console.WriteLine(JsonConvert.SerializeObject(commandControl));
-                Send(JsonConvert.SerializeObject(commandControl));
-            }
-            
         }
 
         /// <summary>
@@ -291,10 +302,14 @@ namespace GameController {
         public void Close() {
             theServer?.TheSocket.Close();
         }
-
+        public void SendMovement()
+        {
+                Console.WriteLine(JsonConvert.SerializeObject(commandControl));
+                Send(JsonConvert.SerializeObject(commandControl));
+        }
 
         public void SendMoveRequest(string code) {
-            messagesSending = true;
+            //Console.WriteLine("Why isnt it sending?????");
             switch (code) {
                 case "W":
                     commandControl.addCommand("up");
@@ -313,7 +328,6 @@ namespace GameController {
         }
 
         public void CancelMoveRequest(string code) {
-            messagesSending = true;
             switch (code) {
                 case "W":
                     commandControl.removeCommand("up");

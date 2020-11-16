@@ -67,11 +67,11 @@ namespace View {
         /// </summary>
         /// <param name="messages"></param>
         private void UpdateView() {
-
-            //this.Invoke(new MethodInvoker(() => this.Update()));
+            controller.SendMovement();
             this.Invoke(new MethodInvoker(() => this.Invalidate(true)));
-            System.Drawing.Point mouse = System.Windows.Forms.Cursor.Position;
-            controller.UpdateMousePosition(mouse.X, mouse.Y);
+            //this.Invoke(new MethodInvoker(() => this.Update()));
+            //System.Drawing.Point mouse = System.Windows.Forms.Cursor.Position;
+            //controller.UpdateMousePosition(mouse.X, mouse.Y);
         }
 
 
