@@ -17,12 +17,14 @@ namespace View
     {
         private World theWorld;
         GameController.GameController controller;
+        Image background;
 
         public DrawingPanel(GameController.GameController cntlr)
         {
             DoubleBuffered = true;
             theWorld = cntlr.GetWorld();
             controller = cntlr;
+            background = Image.FromFile("..\\..\\..\\Resources\\Images\\Background.png");
         }
 
         /// <summary>
@@ -144,8 +146,15 @@ namespace View
         // This method is invoked when the DrawingPanel needs to be re-drawn
         protected override void OnPaint(PaintEventArgs e)
         {
+            if(theWorld == null)
+            {
+                theWorld = controller.GetWorld();
+                return;
+            }
 
-            Image background = Image.FromFile("..\\..\\..\\Resources\\Images\\Background.png");
+            theWorld = controller.GetWorld();
+
+            
             e.Graphics.DrawImage(background, 0, 0);
 
             

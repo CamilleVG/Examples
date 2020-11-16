@@ -15,13 +15,24 @@ namespace View {
         public Form1() {
 
             InitializeComponent();
-            controller = new GameController.GameController();
+            ClientSize = new Size(Constants.VIEWSIZE, Constants.VIEWSIZE + Constants.MENUSIZE);
 
+            controller = new GameController.GameController();
             // register handlers for the controller's events
             controller.newInformation += UpdateView;
             controller.Error += ShowError;
             controller.Connected += HandleConnected;
             controller.AllowInput += StartGameFunctionality;
+
+            // Place and add the drawing panel
+            drawingPanel = new DrawingPanel(controller);
+            drawingPanel.Location = new Point(0, Constants.MENUSIZE);
+            drawingPanel.Size = new Size(Constants.VIEWSIZE, Constants.VIEWSIZE);
+            this.Controls.Add(drawingPanel);
+            drawingPanel.MouseDown += HandleMouseDown;
+            drawingPanel.MouseUp += HandleMouseUp;
+
+            //register key handlers
             this.KeyDown += HandleKeyDown;
             this.KeyUp += HandleKeyUp;
         }
@@ -83,15 +94,6 @@ namespace View {
         }
 
         private void StartGameFunctionality() {
-            // Place and add the drawing panel
-            drawingPanel = new DrawingPanel(controller);
-            drawingPanel.Location = new Point(0, 40);
-            drawingPanel.Size = new Size(Constants.VIEWSIZE, Constants.VIEWSIZE);
-            this.Invoke(new MethodInvoker(() => { this.Controls.Add(drawingPanel); }));
-
-            drawingPanel.MouseDown += HandleMouseDown;
-            drawingPanel.MouseUp += HandleMouseUp;
-
             // Enable the global form to capture key presses
             KeyPreview = true;
         }
