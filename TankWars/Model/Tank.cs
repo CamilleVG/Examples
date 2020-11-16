@@ -55,7 +55,10 @@ namespace Model {
         {
             get => location;
         }
-
+        public Vector2D Orientation
+        {
+            get => orientation;
+        }
 
         public Tank() {
 

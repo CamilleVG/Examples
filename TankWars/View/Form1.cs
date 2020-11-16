@@ -144,13 +144,14 @@ namespace View {
         private World theWorld;
         GameController.GameController controller;
         Image background;
-
+        Image tankImage;
         public DrawingPanel(GameController.GameController cntlr)
         {
             DoubleBuffered = true;
             theWorld = cntlr.GetWorld();
             controller = cntlr;
             background = Image.FromFile("..\\..\\..\\Resources\\Images\\Background.png");
+            tankImage = Image.FromFile("..\\..\\..\\Resources\\Images\\BlueTank.png");
         }
 
         /// <summary>
@@ -201,26 +202,29 @@ namespace View {
         /// </summary>
         /// <param name="o">The object to draw</param>
         /// <param name="e">The PaintEventArgs to access the graphics</param>
-        private void PlayerDrawer(object o, PaintEventArgs e)
+        private void TankDrawer(object o, PaintEventArgs e)
         {
-            Tank p = o as Tank;
+            Rectangle r = new Rectangle(-Constants.TANKSIZE / 2, -Constants.TANKSIZE / 2, Constants.TANKSIZE, Constants.TANKSIZE);
+            e.Graphics.DrawImage(tankImage, r);
 
-            int width = 10;
-            int height = 10;
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            using (System.Drawing.SolidBrush blueBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Blue))
-            using (System.Drawing.SolidBrush greenBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Green))
-            {
-                // Rectangles are drawn starting from the top-left corner.
-                // So if we want the rectangle centered on the player's location, we have to offset it
-                // by half its size to the left (-width/2) and up (-height/2)
-                Rectangle r = new Rectangle(-(width / 2), -(height / 2), width, height);
+            //Tank p = o as Tank;
 
-                //if (p.GetTeam() == 1) // team 1 is blue
-                //    e.Graphics.FillRectangle(blueBrush, r);
-                // else                  // team 2 is green
-                e.Graphics.FillRectangle(greenBrush, r);
-            }
+            //int width = 10;
+            //int height = 10;
+            //e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            //using (System.Drawing.SolidBrush blueBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Blue))
+            //using (System.Drawing.SolidBrush greenBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Green))
+            //{
+            //    // Rectangles are drawn starting from the top-left corner.
+            //    // So if we want the rectangle centered on the player's location, we have to offset it
+            //    // by half its size to the left (-width/2) and up (-height/2)
+            //    Rectangle r = new Rectangle(-(width / 2), -(height / 2), width, height);
+
+            //    //if (p.GetTeam() == 1) // team 1 is blue
+            //    //    e.Graphics.FillRectangle(blueBrush, r);
+            //    // else                  // team 2 is green
+            //    e.Graphics.FillRectangle(greenBrush, r);
+            //}
         }
 
         /// <summary>
@@ -355,9 +359,9 @@ namespace View {
                 }
 
 
-                foreach (Tank play in theWorld.Players.Values)
+                foreach (Tank tank in theWorld.Players.Values)
                 {
-                    //DrawObjectWithTransform(e, play, theWorld.UniverseSize, play.GetLocation().GetX(), play.GetLocation().GetY(), play.GetOrientation().ToAngle(), PlayerDrawer);
+                    DrawObjectWithTransform(e, tank, theWorld.UniverseSize, tank.Location.GetX(), tank.Location.GetY(), tank.Orientation.ToAngle(), TankDrawer);
                 }
 
                 // Draw the powerups

@@ -9,6 +9,8 @@ namespace Resources {
         public static int WALLWIDTH = 50;
         public static int VIEWSIZE = 900;
         public static int MENUSIZE = 40;
-
+        public static int TANKSIZE = 60;
+        public static int TURRETSIZE = 50;
+        public static int PROJECTILESIZE = 30;
     }
 }
