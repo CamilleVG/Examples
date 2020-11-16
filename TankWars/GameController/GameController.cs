@@ -163,7 +163,10 @@ namespace GameController {
 
                 if ((token = obj["wall"]) != null)
                 {
-                    world.setWall(JsonConvert.DeserializeObject<Wall>(p));
+                    lock (world)
+                    {
+                        world.setWall(JsonConvert.DeserializeObject<Wall>(p));
+                    }
                 }
                 else
                 {
@@ -277,23 +280,30 @@ namespace GameController {
 
             JObject obj = JObject.Parse(p);
             JToken token;
-
-            if ((token = obj["tank"]) != null) {
-                world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
-                if (world.Players.ContainsKey(userID))
+            lock (world)
+            {
+                if ((token = obj["tank"]) != null)
                 {
-                    lastUserLocation = world.Players[userID].Location;
+                    world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
+                    if (world.Players.ContainsKey(userID))
+                    {
+                        lastUserLocation = world.Players[userID].Location;
+                    }
+                }
+                else if ((token = obj["proj"]) != null)
+                {
+                    world.setProjData(JsonConvert.DeserializeObject<Projectile>(p));
+                }
+                else if ((token = obj["power"]) != null)
+                {
+                    world.setPowerupData(JsonConvert.DeserializeObject<Powerup>(p));
+                }
+                else if ((token = obj["beam"]) != null)
+                {
+                    world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
                 }
             }
-            else if ((token = obj["proj"]) != null) {
-                world.setProjData(JsonConvert.DeserializeObject<Projectile>(p));
-            }
-            else if ((token = obj["power"]) != null) {
-                world.setPowerupData(JsonConvert.DeserializeObject<Powerup>(p));
-            }
-            else if ((token = obj["beam"]) != null) {
-                world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
-            }
+            
         }
 
         /// <summary>
