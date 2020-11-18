@@ -99,7 +99,7 @@ namespace GameController {
         /// </summary>
         /// <param name="text"></param>
         public void Send(string text) {
-            Networking.Send(theServer.TheSocket, text + "\n");
+            Networking.Send(theServer.TheSocket, text + '\n');
         }
 
         private void HandleUserID(SocketState state) {
@@ -152,29 +152,34 @@ namespace GameController {
                 return;
             }
 
+            string totalData = state.GetData();
+            string[] parts = Regex.Split(totalData, @"(?<=[\n])");
             //if all the walls have been sent and now a new object is sent (that is not a wall), the client can now send commands
-
-            string p = getNextFullMessage(state);
-            if (p != "")
+            foreach(string s in parts)
             {
-                JObject obj = JObject.Parse(p);
-                JToken token;
-
-
-                if ((token = obj["wall"]) != null)
+                string p = getNextFullMessage(state);
+                if (p != "")
                 {
-                    lock (world)
+                    JObject obj = JObject.Parse(p);
+                    JToken token;
+
+
+                    if ((token = obj["wall"]) != null)
                     {
-                        world.setWall(JsonConvert.DeserializeObject<Wall>(p));
+                        lock (world)
+                        {
+                            world.setWall(JsonConvert.DeserializeObject<Wall>(p));
+                        }
+                    }
+                    else
+                    {
+                        commandControl = new CommandControl();
+                        AllowInput();
+                        state.OnNetworkAction = ReceiveMessage;
                     }
                 }
-                else
-                {
-                    commandControl = new CommandControl();
-                    AllowInput();
-                    state.OnNetworkAction = ReceiveMessage;
-                }
             }
+                
             Networking.GetData(state);
         }
 
@@ -200,6 +205,7 @@ namespace GameController {
             //    parseMessage(nextMsg);
             ProcessMessages(state);
             newInformation();
+            SendMovement();
 
             // Continue the event loop
             // state.OnNetworkAction has not been changed, 
@@ -275,9 +281,6 @@ namespace GameController {
         /// </summary>
         /// <param name="p"></param>
         private void parseMessage(string p) {
-            //Console.WriteLine("Parsing Message " + p); //////////////////////////////////////////////////////////
-
-
             JObject obj = JObject.Parse(p);
             JToken token;
             lock (world)
@@ -314,7 +317,6 @@ namespace GameController {
         }
         public void SendMovement()
         {
-                Console.WriteLine(JsonConvert.SerializeObject(commandControl));
                 Send(JsonConvert.SerializeObject(commandControl));
         }
 
