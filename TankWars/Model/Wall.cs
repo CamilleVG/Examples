@@ -47,5 +47,25 @@ namespace Model
                 orientation = Constants.HORIZONTAL;
             }
         }
+
+        public void GetPoint(out double topLeftX, out double topLeftY)
+        {
+            if (firstPoint.GetX() < secondPoint.GetX())
+            {
+                topLeftX = firstPoint.GetX();
+            }
+            else
+            {
+                topLeftX = secondPoint.GetX();
+            }
+            if (firstPoint.GetY() < secondPoint.GetY())
+            {
+                topLeftY = firstPoint.GetY();
+            }
+            else
+            {
+                topLeftY = secondPoint.GetY();
+            }
+        }
     }
 }

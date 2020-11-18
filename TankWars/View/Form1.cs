@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using Resources;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 
 namespace View {
     public partial class Form1 : Form {
@@ -43,7 +45,6 @@ namespace View {
 
         private void ConnectButton_Click(object sender, EventArgs e) {
 
-            Console.WriteLine("Connect buttong was clicked.");
             if (ServerTextBox.Text == "") {
                 MessageBox.Show("Please enter a server address");
                 return;
@@ -69,7 +70,6 @@ namespace View {
         }
         private void HandleConnected() {
             // Just print a message saying we connected
-            Console.WriteLine("Connected to server");
             controller.Send(NameTextBox.Text);
         }
 
@@ -78,9 +78,7 @@ namespace View {
         /// </summary>
         /// <param name="messages"></param>
         private void UpdateView() {
-            controller.SendMovement();
             this.Invoke(new MethodInvoker(() => this.Invalidate(true)));
-
 
             //this.Invoke(new MethodInvoker(() => this.Update()));
             //System.Drawing.Point mouse = System.Windows.Forms.Cursor.Position;
@@ -122,7 +120,6 @@ namespace View {
             controller.CancelMoveRequest(e.KeyCode.ToString());
 
             // Prevent other key handlers from running
-            Console.WriteLine(e.KeyCode.ToString() + " Released");
             e.SuppressKeyPress = true;
             e.Handled = true;
         }
@@ -145,13 +142,56 @@ namespace View {
         GameController.GameController controller;
         Image background;
         Image tankImage;
+        Image wallImage;
+        Bitmap wall;
+        Image projImage;
         public DrawingPanel(GameController.GameController cntlr)
         {
             DoubleBuffered = true;
             theWorld = cntlr.GetWorld();
             controller = cntlr;
+            LoadImages();
+        }
+        public void LoadImages()
+        {
             background = Image.FromFile("..\\..\\..\\Resources\\Images\\Background.png");
             tankImage = Image.FromFile("..\\..\\..\\Resources\\Images\\BlueTank.png");
+            wallImage = Image.FromFile("..\\..\\..\\Resources\\Images\\WallSprite.png");
+            wall = ResizeImage(wallImage, Constants.WALLWIDTH, Constants.WALLWIDTH);
+            projImage = Image.FromFile("..\\..\\..\\Resources\\Images\\shot-blue.png");
+        }
+        /// <summary>
+        /// Resize the image to the specified width and height.
+        /// Method provided by mpen on stackoverflow.com, retieved 11/18/20:
+        /// https://stackoverflow.com/questions/1922040/how-to-resize-an-image-c-sharp
+        /// </summary>
+        /// <param name="image">The image to resize.</param>
+        /// <param name="width">The width to resize to.</param>
+        /// <param name="height">The height to resize to.</param>
+        /// <returns>The resized image.</returns>
+        public static Bitmap ResizeImage(Image image, int width, int height)
+        {
+            var destRect = new Rectangle(0, 0, width, height);
+            var destImage = new Bitmap(width, height);
+
+            destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
+
+            using (var graphics = Graphics.FromImage(destImage))
+            {
+                graphics.CompositingMode = CompositingMode.SourceCopy;
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                using (var wrapMode = new ImageAttributes())
+                {
+                    wrapMode.SetWrapMode(WrapMode.TileFlipXY);
+                    graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
+                }
+            }
+
+            return destImage;
         }
 
         /// <summary>
@@ -205,26 +245,8 @@ namespace View {
         private void TankDrawer(object o, PaintEventArgs e)
         {
             Rectangle r = new Rectangle(-Constants.TANKSIZE / 2, -Constants.TANKSIZE / 2, Constants.TANKSIZE, Constants.TANKSIZE);
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             e.Graphics.DrawImage(tankImage, r);
-
-            //Tank p = o as Tank;
-
-            //int width = 10;
-            //int height = 10;
-            //e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            //using (System.Drawing.SolidBrush blueBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Blue))
-            //using (System.Drawing.SolidBrush greenBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Green))
-            //{
-            //    // Rectangles are drawn starting from the top-left corner.
-            //    // So if we want the rectangle centered on the player's location, we have to offset it
-            //    // by half its size to the left (-width/2) and up (-height/2)
-            //    Rectangle r = new Rectangle(-(width / 2), -(height / 2), width, height);
-
-            //    //if (p.GetTeam() == 1) // team 1 is blue
-            //    //    e.Graphics.FillRectangle(blueBrush, r);
-            //    // else                  // team 2 is green
-            //    e.Graphics.FillRectangle(greenBrush, r);
-            //}
         }
 
         /// <summary>
@@ -236,8 +258,17 @@ namespace View {
         /// <param name="e">The PaintEventArgs to access the graphics</param>
         private void WallDrawer(object o, PaintEventArgs e)
         {
-            Image wall = Image.FromFile("..\\..\\..\\Resources\\Images\\WallSprite.png");
-            e.Graphics.DrawImage(wall, -(Constants.WALLWIDTH / 2), -(Constants.WALLWIDTH / 2), Constants.WALLWIDTH, Constants.WALLWIDTH);
+            Wall w = o as Wall;
+            //Rectangle r = new Rectangle(-(Constants.WALLWIDTH / 2), -(Constants.WALLWIDTH / 2), Constants.WALLWIDTH, Constants.WALLWIDTH);
+            using (System.Drawing.TextureBrush wallBrush = new System.Drawing.TextureBrush(wall))
+            {
+                Rectangle rect = new Rectangle(-(Constants.WALLWIDTH / 2), -(Constants.WALLWIDTH / 2), (int)(Math.Abs(w.FirstPoint.GetX() - w.SecondPoint.GetX()) + 50), (int)(Math.Abs(w.FirstPoint.GetY() - w.SecondPoint.GetY()) + 50));
+                e.Graphics.FillRectangle(wallBrush, rect);
+            }
+        }
+        private void ProjectileDrawer(object o, PaintEventArgs e)
+        {
+            e.Graphics.DrawImage(projImage, -(Constants.PROJECTILESIZE / 2), -(Constants.PROJECTILESIZE / 2), Constants.PROJECTILESIZE, Constants.PROJECTILESIZE);
         }
 
         /// <summary>
@@ -249,26 +280,15 @@ namespace View {
         /// <param name="e">The PaintEventArgs to access the graphics</param>
         private void PowerupDrawer(object o, PaintEventArgs e)
         {
-            Powerup p = o as Powerup;
-
-            int width = 8;
-            int height = 8;
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            using (System.Drawing.SolidBrush redBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Red))
-            using (System.Drawing.SolidBrush yellowBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Yellow))
-            using (System.Drawing.SolidBrush blackBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Black))
+            using (System.Drawing.SolidBrush yellowBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Gold))
             {
-                // Circles are drawn starting from the top-left corner.
-                // So if we want the circle centered on the powerup's location, we have to offset it
-                // by half its size to the left (-width/2) and up (-height/2)
-                Rectangle r = new Rectangle(-(width / 2), -(height / 2), width, height);
-
-                //if (p.GetKind() == 1) // red powerup
-                //    e.Graphics.FillEllipse(redBrush, r);
-                //if (p.GetKind() == 2) // yellow powerup
-                //    e.Graphics.FillEllipse(yellowBrush, r);
-                //if (p.GetKind() == 3) // black powerup
-                //    e.Graphics.FillEllipse(blackBrush, r);
+                Rectangle r = new Rectangle(-Constants.POWERUPOUTER / 2, -Constants.POWERUPOUTER / 2, Constants.POWERUPOUTER, Constants.POWERUPOUTER);
+                e.Graphics.FillEllipse(yellowBrush, r);
+            }
+            using (System.Drawing.SolidBrush greenBrush = new System.Drawing.SolidBrush(System.Drawing.Color.Green))
+            {
+                Rectangle r = new Rectangle(-Constants.POWERUPINNER / 2, -Constants.POWERUPINNER / 2, Constants.POWERUPINNER, Constants.POWERUPINNER);
+                e.Graphics.FillEllipse(greenBrush, r);
             }
         }
         private void BackgroundDrawer(Object o, PaintEventArgs e)
@@ -292,8 +312,6 @@ namespace View {
 
             double playerX = controller.GetPlayerX();
             double playerY = controller.GetPlayerY();
-            Console.WriteLine("Player X:" + playerX);
-            Console.WriteLine("Player Y:" + playerY);
 
             // calculate view/world size ratio
             int worldSize = theWorld.UniverseSize;
@@ -311,52 +329,54 @@ namespace View {
             {
                 foreach (Wall w in theWorld.Walls.Values)
                 {
-                    if (w.orientation == Constants.HORIZONTAL)
-                    {
-                        double startXVal;
-                        double endXVal;
-                        double yVal = w.FirstPoint.GetY();
-                        if (w.FirstPoint.GetX() < w.SecondPoint.GetX())
-                        {
-                            startXVal = w.FirstPoint.GetX();
-                            endXVal = w.SecondPoint.GetX();
-                        }
-                        else
-                        {
-                            startXVal = w.SecondPoint.GetX();
-                            endXVal = w.FirstPoint.GetX();
-                        }
-                        while (startXVal <= endXVal)
-                        {
-                            DrawObjectWithTransform(e, w, theWorld.UniverseSize, startXVal, yVal, 0, WallDrawer);
-                            startXVal += 50;
-                        }
-                    }
-                    else
-                    {//the wall is Vertical
-                        double xVal = w.FirstPoint.GetX();
-                        double startYVal;
-                        double endYVal;
+                    w.GetPoint(out double topLeftX, out double topLeftY);
+                    DrawObjectWithTransform(e, w, theWorld.UniverseSize, topLeftX, topLeftY, 0, WallDrawer);
+                    //if (w.orientation == Constants.HORIZONTAL)
+                    //{
+                    //    double startXVal;
+                    //    double endXVal;
+                    //    double yVal = w.FirstPoint.GetY();
+                    //    if (w.FirstPoint.GetX() < w.SecondPoint.GetX())
+                    //    {
+                    //        startXVal = w.FirstPoint.GetX();
+                    //        endXVal = w.SecondPoint.GetX();
+                    //    }
+                    //    else
+                    //    {
+                    //        startXVal = w.SecondPoint.GetX();
+                    //        endXVal = w.FirstPoint.GetX();
+                    //    }
+                    //    while (startXVal <= endXVal)
+                    //    {
+                    //        DrawObjectWithTransform(e, w, theWorld.UniverseSize, startXVal, yVal, 0, WallDrawer);
+                    //        startXVal += 50;
+                    //    }
+                    //}
+                    //else
+                    //{//the wall is Vertical
+                    //    double xVal = w.FirstPoint.GetX();
+                    //    double startYVal;
+                    //    double endYVal;
 
-                        if (w.FirstPoint.GetY() < w.SecondPoint.GetY())
-                        {
-                            startYVal = w.FirstPoint.GetY();
-                            endYVal = w.SecondPoint.GetY();
-                        }
-                        else
-                        {
-                            startYVal = w.SecondPoint.GetY();
-                            endYVal = w.FirstPoint.GetY();
-                        }
-                        while (startYVal <= endYVal)
-                        {
-                            DrawObjectWithTransform(e, w, theWorld.UniverseSize, xVal, startYVal, 0, WallDrawer);
-                            startYVal += 50;
-                        }
-
-                    }
+                    //    if (w.FirstPoint.GetY() < w.SecondPoint.GetY())
+                    //    {
+                    //        startYVal = w.FirstPoint.GetY();
+                    //        endYVal = w.SecondPoint.GetY();
+                    //    }
+                    //    else
+                    //    {
+                    //        startYVal = w.SecondPoint.GetY();
+                    //        endYVal = w.FirstPoint.GetY();
+                    //    }
+                    //    while (startYVal <= endYVal)
+                    //    {
+                    //        DrawObjectWithTransform(e, w, theWorld.UniverseSize, xVal, startYVal, 0, WallDrawer);
+                    //        startYVal += 50;
+                    //    }
 
                 }
+
+                
 
 
                 foreach (Tank tank in theWorld.Players.Values)
@@ -367,7 +387,12 @@ namespace View {
                 // Draw the powerups
                 foreach (Powerup pow in theWorld.Powerups.Values)
                 {
-                    //DrawObjectWithTransform(e, pow, theWorld.UniverseSize, pow.GetLocation().GetX(), pow.GetLocation().GetY(), 0, PowerupDrawer);
+                    DrawObjectWithTransform(e, pow, theWorld.UniverseSize, pow.Location.GetX(), pow.Location.GetY(), 0, PowerupDrawer);
+                }
+                // Draw the Projectiles
+                foreach (Projectile proj in theWorld.Projectiles.Values)
+                {
+                    DrawObjectWithTransform(e, proj, theWorld.UniverseSize, proj.Location.GetX(), proj.Location.GetY(), proj.Orientation.ToAngle(), ProjectileDrawer);
                 }
             }
 
