@@ -36,7 +36,7 @@ namespace GameController {
         private CommandControl commandControl;
 
         private int userID = -1;
-        private Vector2D lastUserLocation = new Vector2D(0,0);
+        private Vector2D lastUserLocation = new Vector2D(0, 0);
 
         /// <summary>
         /// Model of the game
@@ -47,12 +47,10 @@ namespace GameController {
         public World GetWorld() {
             return world;
         }
-        public double GetPlayerX()
-        {
+        public double GetPlayerX() {
             return lastUserLocation.GetX();
         }
-        public double GetPlayerY()
-        {
+        public double GetPlayerY() {
             return lastUserLocation.GetY();
         }
 
@@ -89,11 +87,6 @@ namespace GameController {
             Networking.GetData(state);
         }
 
-        public void UpdateMousePosition(int x, int y)
-        {
-            
-        }
-
         /// <summary>
         /// Sends a message to the server fromt this client
         /// </summary>
@@ -110,7 +103,7 @@ namespace GameController {
             }
 
             string id = getNextFullMessage(state);
-            
+
             if (id != "") {
 
                 if (!(Int32.TryParse(id, out userID))) {
@@ -143,10 +136,8 @@ namespace GameController {
             }
             Networking.GetData(state);
         }
-        private void HandleWalls(SocketState state)
-        {
-            if (state.ErrorOccured)
-            {
+        private void HandleWalls(SocketState state) {
+            if (state.ErrorOccured) {
                 // inform the view
                 Error("Lost connection to server");
                 return;
@@ -155,37 +146,27 @@ namespace GameController {
             string totalData = state.GetData();
             string[] parts = Regex.Split(totalData, @"(?<=[\n])");
             //if all the walls have been sent and now a new object is sent (that is not a wall), the client can now send commands
-            foreach(string s in parts)
-            {
+            foreach (string s in parts) {
                 string p = getNextFullMessage(state);
-                if (p != "")
-                {
+                if (p != "") {
                     JObject obj = JObject.Parse(p);
                     JToken token;
 
 
-                    if ((token = obj["wall"]) != null)
-                    {
-                        lock (world)
-                        {
+                    if ((token = obj["wall"]) != null) {
+                        lock (world) {
                             world.setWall(JsonConvert.DeserializeObject<Wall>(p));
                         }
                     }
-                    else
-                    {
+                    else {
                         commandControl = new CommandControl();
                         AllowInput();
                         state.OnNetworkAction = ReceiveMessage;
                     }
                 }
             }
-                
-            Networking.GetData(state);
-        }
 
-        public void HandleMouseRequest()
-        {
-            //throw new NotImplementedException();
+            Networking.GetData(state);
         }
 
 
@@ -205,7 +186,7 @@ namespace GameController {
             //    parseMessage(nextMsg);
             ProcessMessages(state);
             newInformation();
-            SendMovement();
+            Send(JsonConvert.SerializeObject(commandControl));
 
             // Continue the event loop
             // state.OnNetworkAction has not been changed, 
@@ -219,16 +200,14 @@ namespace GameController {
         /// Then inform the view
         /// </summary>
         /// <param name="state"></param>
-        private void ProcessMessages(SocketState state)
-        {
+        private void ProcessMessages(SocketState state) {
             string totalData = state.GetData();
             string[] parts = Regex.Split(totalData, @"(?<=[\n])");
 
             // Loop until we have processed all messages.
             // We may have received more than one.
 
-            foreach (string p in parts)
-            {
+            foreach (string p in parts) {
                 // Ignore empty strings added by the regex splitter
                 if (p.Length == 0)
                     continue;
@@ -283,30 +262,24 @@ namespace GameController {
         private void parseMessage(string p) {
             JObject obj = JObject.Parse(p);
             JToken token;
-            lock (world)
-            {
-                if ((token = obj["tank"]) != null)
-                {
+            lock (world) {
+                if ((token = obj["tank"]) != null) {
                     world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
-                    if (world.Players.ContainsKey(userID))
-                    {
+                    if (world.Players.ContainsKey(userID)) {
                         lastUserLocation = world.Players[userID].Location;
                     }
                 }
-                else if ((token = obj["proj"]) != null)
-                {
+                else if ((token = obj["proj"]) != null) {
                     world.setProjData(JsonConvert.DeserializeObject<Projectile>(p));
                 }
-                else if ((token = obj["power"]) != null)
-                {
+                else if ((token = obj["power"]) != null) {
                     world.setPowerupData(JsonConvert.DeserializeObject<Powerup>(p));
                 }
-                else if ((token = obj["beam"]) != null)
-                {
+                else if ((token = obj["beam"]) != null) {
                     world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
                 }
             }
-            
+
         }
 
         /// <summary>
@@ -315,9 +288,21 @@ namespace GameController {
         public void Close() {
             theServer?.TheSocket.Close();
         }
-        public void SendMovement()
-        {
-                Send(JsonConvert.SerializeObject(commandControl));
+
+        public void updateTDir(Vector2D angle) {
+            angle.Normalize();
+            commandControl.tDirection = angle;
+        }
+
+        public void mousePressed(string mouse) {
+            if (mouse == "left")
+                commandControl.fire = "main";
+            if (mouse == "right")
+                commandControl.fire = "alt";
+        }
+
+        public void mouseReleased() {
+            commandControl.fire = "none";
         }
 
         public void SendMoveRequest(string code) {
@@ -336,7 +321,7 @@ namespace GameController {
                     commandControl.addCommand("right");
                     break;
             }
-            
+
         }
 
         public void CancelMoveRequest(string code) {
