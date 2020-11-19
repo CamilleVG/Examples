@@ -12,7 +12,7 @@ namespace Resources {
         public static int TANKSIZE = 60;
         public static int TURRETSIZE = 50;
         public static int PROJECTILESIZE = 30;
-        public static int POWERUPOUTER = 15;
-        public static int POWERUPINNER = 10;
+        public static int POWERUPOUTER = 18;
+        public static int POWERUPINNER = 12;
     }
 }

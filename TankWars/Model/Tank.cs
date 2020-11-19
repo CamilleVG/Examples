@@ -3,6 +3,7 @@ using TankWars;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Resources;
+using System.Collections.Generic;
 
 namespace Model {
     [JsonObject(MemberSerialization.OptIn)]
@@ -38,12 +39,14 @@ namespace Model {
         [JsonProperty(PropertyName = "join")]
         private bool joined = false;
 
-        public int ID
-        {
+
+        public int ID {
             get => id;
         }
-        public bool Disconnected
-        {
+        public Vector2D tdir {
+            get => aiming;
+        }
+        public bool Disconnected {
             get => disconnected;
         }
 
@@ -51,12 +54,10 @@ namespace Model {
             get => died;
         }
 
-        public Vector2D Location
-        {
+        public Vector2D Location {
             get => location;
         }
-        public Vector2D Orientation
-        {
+        public Vector2D Orientation {
             get => orientation;
         }
 

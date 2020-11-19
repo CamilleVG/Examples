@@ -23,7 +23,15 @@ namespace Model {
         public Dictionary<int, Powerup> Powerups;
         public Dictionary<int, Beam> Beams;
         public Dictionary<int, Wall> Walls;
+        private LinkedList<string> colorOrder;
+        private Dictionary<int, string> tankColors;
 
+
+        public string getTankColor(int id) {
+            if (tankColors.ContainsKey(id))
+                return tankColors[id];
+            return "";
+        }
 
         public World(int size) {
             UniverseSize = size;
@@ -32,7 +40,20 @@ namespace Model {
             Powerups = new Dictionary<int, Powerup>();
             Beams = new Dictionary<int, Beam>();
             Walls = new Dictionary<int, Wall>();
+            colorOrder = new LinkedList<string>();
+            tankColors = new Dictionary<int, string>();
+            addColors();
+        }
 
+        private void addColors() {
+            colorOrder.AddLast("blue");
+            colorOrder.AddLast("dark");
+            colorOrder.AddLast("green");
+            colorOrder.AddLast("lightGreen");
+            colorOrder.AddLast("orange");
+            colorOrder.AddLast("purple");
+            colorOrder.AddLast("red");
+            colorOrder.AddLast("yellow");
         }
 
         /// <summary>
@@ -46,9 +67,24 @@ namespace Model {
             else {
                 Players[t.ID] = t;
             }
+            if (!tankColors.ContainsKey(t.ID)) {
+                tankColors.Add(t.ID, colorOrder.First());
+                string temp = colorOrder.First();
+                colorOrder.RemoveFirst();
+                colorOrder.AddLast(temp);
 
-            if (t.Disconnected || t.Died) {
+            }
+            if (t.Died) {
                 Players.Remove(t.ID);
+                return;
+            }
+            if (t.Disconnected) {
+                Players.Remove(t.ID);
+
+                colorOrder.Remove(tankColors[t.ID]);
+                colorOrder.AddFirst(tankColors[t.ID]);
+
+                tankColors.Remove(t.ID);
             }
 
         }

@@ -5,11 +5,9 @@ using TankWars;
 using Newtonsoft.Json;
 using Resources;
 
-namespace Model
-{
+namespace Model {
     [JsonObject(MemberSerialization.OptIn)]
-    public class Projectile
-    {
+    public class Projectile {
         [JsonProperty(PropertyName = "proj")]
         private int id;
 
@@ -23,22 +21,21 @@ namespace Model
         private bool died;
 
         [JsonProperty(PropertyName = "owner")]
-        private string owner;
+        private int owner;
 
-        public int ID
-        {
+        public int ID {
             get => id;
         }
-        public bool Died
-        {
+        public bool Died {
             get => died;
         }
-        public Vector2D Location
-        {
+        public int Owner {
+            get => owner;
+        }
+        public Vector2D Location {
             get => location;
         }
-        public Vector2D Orientation
-        {
+        public Vector2D Orientation {
             get => orientation;
         }
     }
