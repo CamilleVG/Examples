@@ -16,16 +16,16 @@ namespace Model {
         // How many ms must pass before a defeated tank can respawn
         public int RespawnRate { get; private set; }
 
+        public delegate void AnimationRecieved(Object o);
+        public event AnimationRecieved AddAnimation;
 
         // Dictionary collection that stores the states of things
         public Dictionary<int, Tank> Players;
         public Dictionary<int, Projectile> Projectiles;
         public Dictionary<int, Powerup> Powerups;
-        public Dictionary<int, Beam> Beams;
         public Dictionary<int, Wall> Walls;
         private LinkedList<string> colorOrder;
         private Dictionary<int, string> tankColors;
-
 
         public string getTankColor(int id) {
             if (tankColors.ContainsKey(id))
@@ -38,7 +38,6 @@ namespace Model {
             Players = new Dictionary<int, Tank>();
             Projectiles = new Dictionary<int, Projectile>();
             Powerups = new Dictionary<int, Powerup>();
-            Beams = new Dictionary<int, Beam>();
             Walls = new Dictionary<int, Wall>();
             colorOrder = new LinkedList<string>();
             tankColors = new Dictionary<int, string>();
@@ -61,31 +60,40 @@ namespace Model {
         /// </summary>
         /// <param name="t"></param>
         public void setTankData(Tank t) {
-            if (!Players.ContainsKey(t.ID)) {
+            if (!Players.ContainsKey(t.ID) && (t.HP != 0))
+            {
                 Players.Add(t.ID, t);
             }
-            else {
+            else if (t.HP != 0)
+            {
                 Players[t.ID] = t;
+            }
+            else
+            {
+                if (t.Died)
+                {
+                    Players.Remove(t.ID);
+                    AddAnimation(new Explosion(t.Location));
+                    return;
+                }
+                if (t.Disconnected)
+                {
+                    Players.Remove(t.ID);
+
+                    colorOrder.Remove(tankColors[t.ID]);
+                    colorOrder.AddFirst(tankColors[t.ID]);
+
+                    tankColors.Remove(t.ID);
+                }
             }
             if (!tankColors.ContainsKey(t.ID)) {
                 tankColors.Add(t.ID, colorOrder.First());
                 string temp = colorOrder.First();
                 colorOrder.RemoveFirst();
                 colorOrder.AddLast(temp);
-
             }
-            if (t.Died) {
-                Players.Remove(t.ID);
-                return;
-            }
-            if (t.Disconnected) {
-                Players.Remove(t.ID);
-
-                colorOrder.Remove(tankColors[t.ID]);
-                colorOrder.AddFirst(tankColors[t.ID]);
-
-                tankColors.Remove(t.ID);
-            }
+            
+            
 
         }
 
@@ -129,18 +137,7 @@ namespace Model {
         /// </summary>
         /// <param name="beam"></param>
         public void setBeamData(Beam beam) {
-            if (!Beams.ContainsKey(beam.ID)) {
-                Beams.Add(beam.ID, beam);
-            }
-            else {
-                Beams[beam.ID] = beam;
-            }
-
-            //if (beam.Died)
-            //{
-            //    Powerups.Remove(beam.ID);
-            //}
-
+            AddAnimation(beam);
         }
 
         /// <summary>

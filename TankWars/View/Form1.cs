@@ -163,17 +163,25 @@ namespace View {
         Image background;
         Image wallImage;
         Bitmap wall;
+        Bitmap explosion;
 
         // Holds all tuples of tank color images and if they are currently in use
         Dictionary<string, Tuple<Image, Image, Image>> playerColors;
+        HashSet<Object> QueuedAnimations;
 
 
         public DrawingPanel(GameController.GameController cntlr) {
             DoubleBuffered = true;
             theWorld = cntlr.GetWorld();
             controller = cntlr;
+            QueuedAnimations = new HashSet<object>();
+            controller.TriggerAnimations += HandleAnimations;
             playerColors = new Dictionary<string, Tuple<Image, Image, Image>>();
             LoadImages();
+        }
+        private void HandleAnimations(Object o)
+        {
+            QueuedAnimations.Add(o);
         }
 
         /// <summary>
@@ -319,6 +327,12 @@ namespace View {
             e.Graphics.DrawImage(background, r);
         }
 
+        private void ExplosionDrawer(Object o, PaintEventArgs e)
+        {
+            Rectangle r = new Rectangle(-Constants.TANKSIZE / 2, -Constants.TANKSIZE / 2, Constants.TANKSIZE, Constants.TANKSIZE);
+            e.Graphics.DrawImage(explosion, r);
+        }
+
         // This method is invoked when the DrawingPanel needs to be re-drawn
         protected override void OnPaint(PaintEventArgs e) {
             if (theWorld == null) {
@@ -342,6 +356,31 @@ namespace View {
             DrawObjectWithTransform(e, background, theWorld.UniverseSize, 0, 0, 0, BackgroundDrawer);
             // Draw everything
             lock (theWorld) {
+                foreach (Object o in QueuedAnimations)
+                {
+                    if(o is Explosion)
+                    {
+                        
+                        Explosion exp = o as Explosion;
+                        if (exp.CurrentlyAnimating)
+                        {
+                            ImageAnimator.UpdateFrames();
+                            Console.WriteLine("Select frame");
+                            DrawObjectWithTransform(e, exp, theWorld.UniverseSize, exp.Location.GetX(), exp.Location.GetY(), 0, ExplosionDrawer);
+                        }
+                        else
+                        {
+                            exp.CurrentlyAnimating = true;
+                            ImageAnimator.Animate(explosion, (Object obj, EventArgs evt) => { });
+                        }
+                    }
+                    else if (o is Beam)
+                    { 
+                        Beam b = o as Beam;
+                        //DrawObjectWithTransform(e, b, theWorld.UniverseSize, b.Location.GetX(), b.Location.GetY(), 0, BeamDrawer);
+                    }  
+                }
+                //QueuedAnimations.Clear();
                 // Draw the Walls
                 foreach (Wall w in theWorld.Walls.Values) {
                     w.GetPoint(out double topLeftX, out double topLeftY);
@@ -374,7 +413,7 @@ namespace View {
         private void LoadImages() {
             wallImage = Image.FromFile("..\\..\\..\\Resources\\Images\\WallSprite.png");
             wall = ResizeImage(wallImage, Constants.WALLWIDTH, Constants.WALLWIDTH);
-
+            explosion = new Bitmap(Image.FromFile("..\\..\\..\\Resources\\Images\\Explosion.gif"));
             background = Image.FromFile("..\\..\\..\\Resources\\Images\\Background.png");
 
 

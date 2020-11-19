@@ -22,5 +22,9 @@ namespace Model {
         public int ID {
             get => id;
         }
+        public Vector2D Location
+        {
+            get => origin;
+        }
     }
 }

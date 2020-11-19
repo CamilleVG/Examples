@@ -60,6 +60,10 @@ namespace Model {
         public Vector2D Orientation {
             get => orientation;
         }
+        public int HP
+        {
+            get => hitPoints;
+        }
 
         public Tank() {
 

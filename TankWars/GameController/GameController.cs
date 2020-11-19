@@ -28,6 +28,9 @@ namespace GameController {
         public delegate void WallsReceivedHandler();
         public event WallsReceivedHandler AllowInput;
 
+        public delegate void AnimationRecieved(Object o);
+        public event AnimationRecieved TriggerAnimations;
+
         /// <summary>
         /// State representing the connection with the server
         /// </summary>
@@ -132,9 +135,14 @@ namespace GameController {
                     return;
                 }
                 world = new World(worldSize);
+                world.AddAnimation += HandleAnimation;
                 state.OnNetworkAction = HandleWalls;
             }
             Networking.GetData(state);
+        }
+        private void HandleAnimation(Object o)
+        {
+            TriggerAnimations(o);
         }
         private void HandleWalls(SocketState state) {
             if (state.ErrorOccured) {
