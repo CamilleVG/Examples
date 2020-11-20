@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Resources {
+namespace Model {
     public class Constants {
 
         public static int MaxHP = 3;
@@ -14,5 +14,10 @@ namespace Resources {
         public static int PROJECTILESIZE = 30;
         public static int POWERUPOUTER = 18;
         public static int POWERUPINNER = 12;
+        public static int EXPLOSIONTIMESCALAR = 8;
+        public static int EXPLOSIONSIZE = 140;
+        public static int BEAMTIMESCALAR = 8;
+        public static int BEAMSIZELENGTH = 900;
+        public static int BEAMSIZEWIDTH = 20;
     }
 }

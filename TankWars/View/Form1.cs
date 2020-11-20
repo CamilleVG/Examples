@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using Resources;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using TankWars;
@@ -164,6 +163,8 @@ namespace View {
         Image wallImage;
         Bitmap wall;
         Bitmap explosion;
+        Image[] explosionframes;
+        Image[] beamframes;
 
         // Holds all tuples of tank color images and if they are currently in use
         Dictionary<string, Tuple<Image, Image, Image>> playerColors;
@@ -184,6 +185,19 @@ namespace View {
             QueuedAnimations.Add(o);
         }
 
+        private Image[] getFrames(Image originalImg)
+        {
+            int numberOfFrames = originalImg.GetFrameCount(FrameDimension.Time);
+            Image[] frames = new Image[numberOfFrames];
+
+            for (int i = 0; i < numberOfFrames; i++)
+            {
+                originalImg.SelectActiveFrame(FrameDimension.Time, i);
+                frames[i] = ((Image)originalImg.Clone());
+            }
+
+            return frames;
+        }
         /// <summary>
         /// Resize the image to the specified width and height.
         /// Method provided by mpen on stackoverflow.com, retieved 11/18/20:
@@ -329,9 +343,28 @@ namespace View {
 
         private void ExplosionDrawer(Object o, PaintEventArgs e)
         {
-            Rectangle r = new Rectangle(-Constants.TANKSIZE / 2, -Constants.TANKSIZE / 2, Constants.TANKSIZE, Constants.TANKSIZE);
-            e.Graphics.DrawImage(explosion, r);
+            Explosion exp = o as Explosion;
+            if (exp.ticker < (explosionframes.Length*Constants.EXPLOSIONTIMESCALAR))
+            {
+                Rectangle r = new Rectangle(-(Constants.EXPLOSIONSIZE) / 2, -(Constants.EXPLOSIONSIZE) / 2, Constants.EXPLOSIONSIZE, Constants.EXPLOSIONSIZE);
+                e.Graphics.DrawImage(explosionframes[exp.ticker/Constants.EXPLOSIONTIMESCALAR], r);
+                exp.ticker++;
+            }
+
         }
+        private void BeamDrawer(object o, PaintEventArgs e)
+        {
+            Beam b = o as Beam;
+            Console.WriteLine("There are this many frames in beam: " + beamframes.Length);
+            if (b.ticker < (beamframes.Length * Constants.BEAMTIMESCALAR))
+            {
+                Rectangle r = new Rectangle(-(Constants.BEAMSIZEWIDTH)/2, -(Constants.BEAMSIZELENGTH), Constants.BEAMSIZEWIDTH, Constants.BEAMSIZELENGTH);
+               // e.Graphics.RotateTransform
+                e.Graphics.DrawImage(beamframes[b.ticker / Constants.BEAMTIMESCALAR], r);
+                b.ticker++;
+            }
+        }
+
 
         // This method is invoked when the DrawingPanel needs to be re-drawn
         protected override void OnPaint(PaintEventArgs e) {
@@ -339,8 +372,9 @@ namespace View {
                 theWorld = controller.GetWorld();
                 return;
             }
-
-            double playerX = controller.GetPlayerX();
+            lock (theWorld)
+            {
+                double playerX = controller.GetPlayerX();
             double playerY = controller.GetPlayerY();
 
             // calculate view/world size ratio
@@ -354,33 +388,11 @@ namespace View {
             e.Graphics.TranslateTransform((float)inverseTranslateX, (float)inverseTranslateY);
 
             DrawObjectWithTransform(e, background, theWorld.UniverseSize, 0, 0, 0, BackgroundDrawer);
-            // Draw everything
-            lock (theWorld) {
-                foreach (Object o in QueuedAnimations)
-                {
-                    if(o is Explosion)
-                    {
-                        
-                        Explosion exp = o as Explosion;
-                        if (exp.CurrentlyAnimating)
-                        {
-                            ImageAnimator.UpdateFrames();
-                            Console.WriteLine("Select frame");
-                            DrawObjectWithTransform(e, exp, theWorld.UniverseSize, exp.Location.GetX(), exp.Location.GetY(), 0, ExplosionDrawer);
-                        }
-                        else
-                        {
-                            exp.CurrentlyAnimating = true;
-                            ImageAnimator.Animate(explosion, (Object obj, EventArgs evt) => { });
-                        }
-                    }
-                    else if (o is Beam)
-                    { 
-                        Beam b = o as Beam;
-                        //DrawObjectWithTransform(e, b, theWorld.UniverseSize, b.Location.GetX(), b.Location.GetY(), 0, BeamDrawer);
-                    }  
-                }
-                //QueuedAnimations.Clear();
+                // Draw everything
+
+                //Draws Explosions and Beams
+                DrawAnimations(e);
+
                 // Draw the Walls
                 foreach (Wall w in theWorld.Walls.Values) {
                     w.GetPoint(out double topLeftX, out double topLeftY);
@@ -409,13 +421,47 @@ namespace View {
             }
 
         }
+        private void DrawAnimations(PaintEventArgs e)
+        {
+            HashSet<Object> ToRemove = new HashSet<Object>();
+            foreach (Object o in QueuedAnimations)
+            {
+                if (o is Explosion)
+                {
+                    Explosion exp = o as Explosion;
+                    DrawObjectWithTransform(e, exp, theWorld.UniverseSize, exp.Location.GetX(), exp.Location.GetY(), 0, ExplosionDrawer);
+                    if (exp.AnimationFinished())
+                    {
+                        exp.ticker = 0;
+                        ToRemove.Add(exp);
+                    }
+                }
+                else if (o is Beam)
+                {
+                    Beam b = o as Beam;
+                    DrawObjectWithTransform(e, b, theWorld.UniverseSize, b.Location.GetX(), b.Location.GetY(), b.Orientation.ToAngle(), BeamDrawer);
+                    if (b.AnimationFinished())
+                    {
+                        b.ticker = 0;
+                        ToRemove.Add(b);
+                    }
+                }
+            }
+
+            foreach (Object o in ToRemove)
+            {
+                QueuedAnimations.Remove(o);
+            }
+        }
+
+        
 
         private void LoadImages() {
             wallImage = Image.FromFile("..\\..\\..\\Resources\\Images\\WallSprite.png");
             wall = ResizeImage(wallImage, Constants.WALLWIDTH, Constants.WALLWIDTH);
-            explosion = new Bitmap(Image.FromFile("..\\..\\..\\Resources\\Images\\Explosion.gif"));
             background = Image.FromFile("..\\..\\..\\Resources\\Images\\Background.png");
-
+            explosionframes = getFrames(Image.FromFile("..\\..\\..\\Resources\\Images\\Explosion.gif"));
+            beamframes = getFrames(Image.FromFile("..\\..\\..\\Resources\\Images\\Beam.gif"));
 
             // Blue
             playerColors.Add("blue", new Tuple<Image, Image, Image>(Image.FromFile("..\\..\\..\\Resources\\Images\\BlueTank.png"),

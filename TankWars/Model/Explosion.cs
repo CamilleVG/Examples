@@ -9,8 +9,8 @@ namespace Model
     public class Explosion
     {
         private Vector2D location;
-        public bool CurrentlyAnimating;
-
+        public int ticker;
+        
 
         public Vector2D Location
         {
@@ -20,7 +20,15 @@ namespace Model
         public Explosion(Vector2D loc)
         {
             location = loc;
-            CurrentlyAnimating = false;
         }
+        public bool AnimationFinished()
+        {
+            if (ticker >= 7 * Constants.EXPLOSIONTIMESCALAR)
+            {
+                return true;
+            }
+            return false;
+        }
+       
     }
 }

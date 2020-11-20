@@ -19,12 +19,26 @@ namespace Model {
         [JsonProperty(PropertyName = "owner")]
         private int ownerID;
 
+        public int ticker = 0;
+
         public int ID {
             get => id;
         }
         public Vector2D Location
         {
             get => origin;
+        }
+        public Vector2D Orientation
+        {
+            get => direction;
+        }
+        public bool AnimationFinished()
+        {
+            if (ticker >= 4 * Constants.BEAMTIMESCALAR)
+            {
+                return true;
+            }
+            return false;
         }
     }
 }
