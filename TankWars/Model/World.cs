@@ -122,7 +122,7 @@ namespace Model {
                 Powerups[power.id] = power;
             }
 
-            if (power.Died) {
+            if (power.died) {
                 Powerups.Remove(power.id);
             }
         }
@@ -141,11 +141,11 @@ namespace Model {
         /// <param name="wall"></param>
         public void setWall(Wall wall) {
 
-            if (!Walls.ContainsKey(wall.ID)) {
-                Walls.Add(wall.ID, wall);
+            if (!Walls.ContainsKey(wall.id)) {
+                Walls.Add(wall.id, wall);
             }
             else {
-                Walls[wall.ID] = wall;
+                Walls[wall.id] = wall;
             }
             wall.Orient(); //calculates whether the wall is horizontal or vertical for the drawing panel
 
