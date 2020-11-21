@@ -178,7 +178,11 @@ namespace GameController {
 
             // Add all wall json
             foreach (string s in parts) {
+
                 if (s != "") {
+
+                    if (s[s.Length - 1] != '\n')
+                        break;
 
                     JObject obj = JObject.Parse(s);
                     JToken token;
