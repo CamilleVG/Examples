@@ -19,26 +19,41 @@ namespace Model {
         [JsonProperty(PropertyName = "owner")]
         private int ownerID;
 
-        public int ticker = 0;
+        public int ticker {
+            get; private set;
+        }
+
+        private int timesLooped = 0;
 
         public int ID {
             get => id;
         }
-        public Vector2D Location
-        {
+        public Vector2D Location {
             get => origin;
         }
-        public Vector2D Orientation
-        {
+        public Vector2D Orientation {
             get => direction;
         }
-        public bool AnimationFinished()
-        {
-            if (ticker >= 4 * Constants.BEAMTIMESCALAR)
-            {
-                return true;
+
+        public void advanceTicker() {
+            lock (this) {
+                ticker++;
+                if (ticker >= 4 * Constants.BEAMTIMESCALAR && timesLooped < Constants.BEAMLOOPTIMES) {
+                    ticker = 0;
+                    timesLooped++;
+                }
             }
-            return false;
+        }
+
+
+
+        public bool AnimationFinished() {
+            lock (this) {
+                if (ticker >= 4 * Constants.BEAMTIMESCALAR) {
+                    return true;
+                }
+                return false;
+            }
         }
     }
 }
