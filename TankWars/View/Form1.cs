@@ -1,4 +1,8 @@
-﻿using Model;
+﻿// Authors: Preston Powell and Camille Van Ginkel
+// PS8 code for Daniel Kopta's CS 3500 class at the University of Utah Fall 2020
+// Version 1.0.3, Nov 2020
+
+using Model;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -18,6 +22,8 @@ namespace View {
 
             InitializeComponent();
             ClientSize = new Size(Constants.VIEWSIZE, Constants.VIEWSIZE + Constants.MENUSIZE);
+            this.BackColor = Color.Black;
+
 
             controller = new GameController.GameController();
             // register handlers for the controller's events
@@ -40,20 +46,20 @@ namespace View {
         private void HandleMouseMoved(object sender, MouseEventArgs e) {
             //double angleFromCenterToMouse = Math.Asin((e.Y - Constants.VIEWSIZE / 2) / (e.X - Constants.VIEWSIZE / 2));
             Vector2D vectorFromCenter = new Vector2D((e.X - Constants.VIEWSIZE / 2), (e.Y - Constants.VIEWSIZE / 2));
-            controller.updateTDir(vectorFromCenter);
+            controller.UpdateTDir(vectorFromCenter);
         }
 
 
         private void HandleMouseDown(object sender, MouseEventArgs e) {
             if (e.Button == MouseButtons.Left)
-                controller.mousePressed("left");
+                controller.MousePressed("left");
             if (e.Button == MouseButtons.Right)
-                controller.mousePressed("right");
+                controller.MousePressed("right");
         }
 
         private void HandleMouseUp(object sender, MouseEventArgs e) {
-            if (e.Button == MouseButtons.Left)
-                controller.mouseReleased();
+            //if (e.Button == MouseButtons.Left)
+            controller.mouseReleased();
         }
 
         private void ConnectButton_Click(object sender, EventArgs e) {
@@ -120,7 +126,7 @@ namespace View {
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void HandleKeyDown(object sender, KeyEventArgs e) {
-            controller.SendMoveRequest(e.KeyCode.ToString());
+            controller.UpdateMoveCommand(e.KeyCode.ToString());
 
             // Prevent other key handlers from running
             e.SuppressKeyPress = true;
@@ -180,18 +186,18 @@ namespace View {
             playerColors = new Dictionary<string, Tuple<Image, Image, Image>>();
             LoadImages();
         }
-        private void HandleAnimations(Object o)
-        {
+        private void HandleAnimations(Object o) {
             QueuedAnimations.Add(o);
         }
 
-        private Image[] getFrames(Image originalImg)
-        {
+
+        // Code provided by https://codingvision.net/c-get-frames-from-a-gif.
+        // Retrieved on 20.11.20
+        private Image[] getFrames(Image originalImg) {
             int numberOfFrames = originalImg.GetFrameCount(FrameDimension.Time);
             Image[] frames = new Image[numberOfFrames];
 
-            for (int i = 0; i < numberOfFrames; i++)
-            {
+            for (int i = 0; i < numberOfFrames; i++) {
                 originalImg.SelectActiveFrame(FrameDimension.Time, i);
                 frames[i] = ((Image)originalImg.Clone());
             }
@@ -278,7 +284,7 @@ namespace View {
         private void TankDrawer(object o, PaintEventArgs e) {
             Tank t = o as Tank;
 
-            Image tankImage = playerColors[theWorld.getTankColor(t.ID)].Item1;
+            Image tankImage = playerColors[theWorld.getTankColor(t.id)].Item1;
             Rectangle r = new Rectangle(-Constants.TANKSIZE / 2, -Constants.TANKSIZE / 2, Constants.TANKSIZE, Constants.TANKSIZE);
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             e.Graphics.DrawImage(tankImage, r);
@@ -288,7 +294,7 @@ namespace View {
         private void TurretDrawer(object o, PaintEventArgs e) {
             Tank t = o as Tank;
 
-            Image turretImage = playerColors[theWorld.getTankColor(t.ID)].Item2;
+            Image turretImage = playerColors[theWorld.getTankColor(t.id)].Item2;
             Rectangle r = new Rectangle(-Constants.TURRETSIZE / 2, -Constants.TURRETSIZE / 2, Constants.TURRETSIZE, Constants.TURRETSIZE);
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             e.Graphics.DrawImage(turretImage, r);
@@ -312,8 +318,8 @@ namespace View {
         }
         private void ProjectileDrawer(object o, PaintEventArgs e) {
             Projectile p = o as Projectile;
-            Tank t = theWorld.Players[p.Owner];
-            Image projImage = playerColors[theWorld.getTankColor(t.ID)].Item3;
+            Tank t = theWorld.Players[p.owner];
+            Image projImage = playerColors[theWorld.getTankColor(t.id)].Item3;
             e.Graphics.DrawImage(projImage, -(Constants.PROJECTILESIZE / 2), -(Constants.PROJECTILESIZE / 2), Constants.PROJECTILESIZE, Constants.PROJECTILESIZE);
         }
 
@@ -341,27 +347,45 @@ namespace View {
             e.Graphics.DrawImage(background, r);
         }
 
-        private void ExplosionDrawer(Object o, PaintEventArgs e)
-        {
+        private void ExplosionDrawer(Object o, PaintEventArgs e) {
             Explosion exp = o as Explosion;
-            if (exp.ticker < (explosionframes.Length*Constants.EXPLOSIONTIMESCALAR))
-            {
+            if (exp.ticker < (explosionframes.Length * Constants.EXPLOSIONTIMESCALAR)) {
                 Rectangle r = new Rectangle(-(Constants.EXPLOSIONSIZE) / 2, -(Constants.EXPLOSIONSIZE) / 2, Constants.EXPLOSIONSIZE, Constants.EXPLOSIONSIZE);
-                e.Graphics.DrawImage(explosionframes[exp.ticker/Constants.EXPLOSIONTIMESCALAR], r);
+                e.Graphics.DrawImage(explosionframes[exp.ticker / Constants.EXPLOSIONTIMESCALAR], r);
                 exp.ticker++;
             }
-
         }
-        private void BeamDrawer(object o, PaintEventArgs e)
-        {
+        private void BeamDrawer(object o, PaintEventArgs e) {
             Beam b = o as Beam;
-            Console.WriteLine("There are this many frames in beam: " + beamframes.Length);
-            if (b.ticker < (beamframes.Length * Constants.BEAMTIMESCALAR))
-            {
-                Rectangle r = new Rectangle(-(Constants.BEAMSIZEWIDTH)/2, -(Constants.BEAMSIZELENGTH), Constants.BEAMSIZEWIDTH, Constants.BEAMSIZELENGTH);
-               // e.Graphics.RotateTransform
+            if (b.ticker < (beamframes.Length * Constants.BEAMTIMESCALAR)) {
+                Rectangle r = new Rectangle(-(Constants.BEAMSIZEWIDTH) / 2, -(Constants.BEAMSIZELENGTH), Constants.BEAMSIZEWIDTH, Constants.BEAMSIZELENGTH);
+                // e.Graphics.RotateTransform
                 e.Graphics.DrawImage(beamframes[b.ticker / Constants.BEAMTIMESCALAR], r);
                 b.ticker++;
+            }
+        }
+
+        private void HealthBarDrawer(Object o, PaintEventArgs e) {
+            Tank t = o as Tank;
+            using (System.Drawing.SolidBrush brush = new System.Drawing.SolidBrush(Color.Black)) {
+                if (t.hitPoints == 1)
+                    brush.Color = Color.Red;
+                if (t.hitPoints == 2)
+                    brush.Color = Color.Yellow;
+                if (t.hitPoints == 3)
+                    brush.Color = Color.Green;
+
+                Rectangle r = new Rectangle(-Constants.HEALTHBARWIDTH / 2, -((Constants.TANKSIZE / 2) + Constants.HEALTHBARHEIGHT * 2), t.hitPoints * (Constants.HEALTHBARWIDTH / 3), Constants.HEALTHBARHEIGHT);
+                e.Graphics.FillRectangle(brush, r);
+            }
+        }
+
+        private void PlayerNameDrawer(Object o, PaintEventArgs e) {
+            Tank t = o as Tank;
+            using (System.Drawing.SolidBrush brush = new System.Drawing.SolidBrush(Color.White)) {
+                StringFormat format = new StringFormat();
+                format.Alignment = StringAlignment.Center;
+                e.Graphics.DrawString(t.name + ": " + t.score, new Font("Arial", 14), brush, 0, Constants.TANKSIZE / 2, format);
             }
         }
 
@@ -372,22 +396,21 @@ namespace View {
                 theWorld = controller.GetWorld();
                 return;
             }
-            lock (theWorld)
-            {
+            lock (theWorld) {
                 double playerX = controller.GetPlayerX();
-            double playerY = controller.GetPlayerY();
+                double playerY = controller.GetPlayerY();
 
-            // calculate view/world size ratio
-            int worldSize = theWorld.UniverseSize;
-            double ratio = (double)Constants.VIEWSIZE / (double)worldSize;
-            int halfSizeScaled = (int)(worldSize / 2.0 * ratio);
+                // calculate view/world size ratio
+                int worldSize = theWorld.UniverseSize;
+                double ratio = (double)Constants.VIEWSIZE / (double)worldSize;
+                int halfSizeScaled = (int)(worldSize / 2.0 * ratio);
 
-            double inverseTranslateX = -WorldSpaceToImageSpace(worldSize, playerX) + halfSizeScaled;
-            double inverseTranslateY = -WorldSpaceToImageSpace(worldSize, playerY) + halfSizeScaled;
+                double inverseTranslateX = -WorldSpaceToImageSpace(worldSize, playerX) + halfSizeScaled;
+                double inverseTranslateY = -WorldSpaceToImageSpace(worldSize, playerY) + halfSizeScaled;
 
-            e.Graphics.TranslateTransform((float)inverseTranslateX, (float)inverseTranslateY);
+                e.Graphics.TranslateTransform((float)inverseTranslateX, (float)inverseTranslateY);
 
-            DrawObjectWithTransform(e, background, theWorld.UniverseSize, 0, 0, 0, BackgroundDrawer);
+                DrawObjectWithTransform(e, background, theWorld.UniverseSize, 0, 0, 0, BackgroundDrawer);
                 // Draw everything
 
                 //Draws Explosions and Beams
@@ -395,14 +418,16 @@ namespace View {
 
                 // Draw the Walls
                 foreach (Wall w in theWorld.Walls.Values) {
-                    w.GetPoint(out double topLeftX, out double topLeftY);
+                    w.GetPoints(out double topLeftX, out double topLeftY);
                     DrawObjectWithTransform(e, w, theWorld.UniverseSize, topLeftX, topLeftY, 0, WallDrawer);
                 }
 
                 // Draw the Tanks
                 foreach (Tank tank in theWorld.Players.Values) {
-                    DrawObjectWithTransform(e, tank, theWorld.UniverseSize, tank.Location.GetX(), tank.Location.GetY(), tank.Orientation.ToAngle(), TankDrawer);
-                    DrawObjectWithTransform(e, tank, theWorld.UniverseSize, tank.Location.GetX(), tank.Location.GetY(), tank.tdir.ToAngle(), TurretDrawer);
+                    DrawObjectWithTransform(e, tank, theWorld.UniverseSize, tank.location.GetX(), tank.location.GetY(), tank.orientation.ToAngle(), TankDrawer);
+                    DrawObjectWithTransform(e, tank, theWorld.UniverseSize, tank.location.GetX(), tank.location.GetY(), tank.tdir.ToAngle(), TurretDrawer);
+                    DrawObjectWithTransform(e, tank, theWorld.UniverseSize, tank.location.GetX(), tank.location.GetY(), 0, HealthBarDrawer);
+                    DrawObjectWithTransform(e, tank, theWorld.UniverseSize, tank.location.GetX(), tank.location.GetY(), 0, PlayerNameDrawer);
                 }
 
                 // Draw the Powerups
@@ -412,7 +437,7 @@ namespace View {
 
                 // Draw the Projectiles
                 foreach (Projectile proj in theWorld.Projectiles.Values) {
-                    DrawObjectWithTransform(e, proj, theWorld.UniverseSize, proj.Location.GetX(), proj.Location.GetY(), proj.Orientation.ToAngle(), ProjectileDrawer);
+                    DrawObjectWithTransform(e, proj, theWorld.UniverseSize, proj.location.GetX(), proj.location.GetY(), proj.orientation.ToAngle(), ProjectileDrawer);
                 }
 
                 // Do anything that Panel (from which we inherit) needs to do
@@ -421,40 +446,33 @@ namespace View {
             }
 
         }
-        private void DrawAnimations(PaintEventArgs e)
-        {
+        private void DrawAnimations(PaintEventArgs e) {
             HashSet<Object> ToRemove = new HashSet<Object>();
-            foreach (Object o in QueuedAnimations)
-            {
-                if (o is Explosion)
-                {
+            foreach (Object o in QueuedAnimations) {
+                if (o is Explosion) {
                     Explosion exp = o as Explosion;
                     DrawObjectWithTransform(e, exp, theWorld.UniverseSize, exp.Location.GetX(), exp.Location.GetY(), 0, ExplosionDrawer);
-                    if (exp.AnimationFinished())
-                    {
+                    if (exp.AnimationFinished()) {
                         exp.ticker = 0;
                         ToRemove.Add(exp);
                     }
                 }
-                else if (o is Beam)
-                {
+                else if (o is Beam) {
                     Beam b = o as Beam;
                     DrawObjectWithTransform(e, b, theWorld.UniverseSize, b.Location.GetX(), b.Location.GetY(), b.Orientation.ToAngle(), BeamDrawer);
-                    if (b.AnimationFinished())
-                    {
+                    if (b.AnimationFinished()) {
                         b.ticker = 0;
                         ToRemove.Add(b);
                     }
                 }
             }
 
-            foreach (Object o in ToRemove)
-            {
+            foreach (Object o in ToRemove) {
                 QueuedAnimations.Remove(o);
             }
         }
 
-        
+
 
         private void LoadImages() {
             wallImage = Image.FromFile("..\\..\\..\\Resources\\Images\\WallSprite.png");

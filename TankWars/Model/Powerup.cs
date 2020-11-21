@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Authors: Preston Powell and Camille Van Ginkel
+// PS8 code for Daniel Kopta's CS 3500 class at the University of Utah Fall 2020
+// Version 1.0.3, Nov 2020
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
@@ -6,29 +10,26 @@ using TankWars;
 
 namespace Model
 {
+
+    /// <summary>
+    /// Represents a powerup
+    /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class Powerup
     {
         [JsonProperty(PropertyName = "power")]
-        private int id;
+        public int id {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "loc")]
-        private Vector2D location;
+        public Vector2D location {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "died")]
-        private bool died;
-
-        public int ID
-        {
-            get => id;
-        }
-        public bool Died
-        {
-            get => died;
-        }
-        public Vector2D Location
-        {
-            get => location;
+        public bool died {
+            get; private set;
         }
 
     }

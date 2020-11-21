@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Authors: Preston Powell and Camille Van Ginkel
+// PS8 code for Daniel Kopta's CS 3500 class at the University of Utah Fall 2020
+// Version 1.0.3, Nov 2020
+
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Net.Http;
@@ -14,7 +18,11 @@ using System.Numerics;
 
 namespace GameController {
 
+    /// <summary>
+    /// Sends user commands to the server and updates the model using messages received from the server.
+    /// </summary>
     public class GameController {
+
         // Controller events that the view can subscribe to
         public delegate void updateReceived();
         public event updateReceived newInformation;
@@ -31,14 +39,15 @@ namespace GameController {
         public delegate void AnimationRecieved(Object o);
         public event AnimationRecieved TriggerAnimations;
 
-        /// <summary>
-        /// State representing the connection with the server
-        /// </summary>
-        SocketState theServer = null;
+        // State representing the connection with the server
+        private SocketState theServer = null;
 
+        // Stores the state of the user's commands
         private CommandControl commandControl;
 
-        private int userID = -1;
+        // Stores the user's ID
+        private int userID;
+
         private Vector2D lastUserLocation = new Vector2D(0, 0);
 
         /// <summary>
@@ -46,13 +55,25 @@ namespace GameController {
         /// </summary>
         World world;
 
-        // Used to provide the world to the view
+        /// <summary>
+        /// Returns this controller's world
+        /// </summary>
         public World GetWorld() {
             return world;
+
         }
+        /// <summary>
+        /// Returns the player's most recently recorded X position
+        /// </summary>
+        /// <returns></returns>
         public double GetPlayerX() {
             return lastUserLocation.GetX();
         }
+
+        /// <summary>
+        /// Returns the player's most recently recorded Y position
+        /// </summary>
+        /// <returns></returns>
         public double GetPlayerY() {
             return lastUserLocation.GetY();
         }
@@ -72,76 +93,73 @@ namespace GameController {
         /// <param name="state"></param>
         private void OnConnect(SocketState state) {
             if (state.ErrorOccured) {
-                // inform the view
+                // inform the view of any error's
                 Error("Error connecting to server");
                 return;
             }
 
             theServer = state;
-            //world = new World(worldSize);
 
-
-            // inform the view, which will call send with the player's name
+            // inform the view that we have connected, which will call send with the player's name
             Connected();
 
-
-            // Start an event loop to receive messages from the server
-            state.OnNetworkAction = HandleUserID;
+            // Start an event loop to receive messages from the server, with the first message anticipated to be the user ID
+            state.OnNetworkAction = HandleIDandWorldSize;
             Networking.GetData(state);
         }
 
         /// <summary>
         /// Sends a message to the server fromt this client
         /// </summary>
-        /// <param name="text"></param>
         public void Send(string text) {
             Networking.Send(theServer.TheSocket, text + '\n');
         }
 
-        private void HandleUserID(SocketState state) {
+        private void HandleIDandWorldSize(SocketState state) {
             if (state.ErrorOccured) {
                 // inform the view
                 Error("Lost connection to server");
                 return;
             }
+            string totalData = state.GetData();
+            string[] parts = Regex.Split(totalData, @"(?<=[\n])");
 
-            string id = getNextFullMessage(state);
-
-            if (id != "") {
-
-                if (!(Int32.TryParse(id, out userID))) {
-                    Error("First message sent be server was not the players ID");
-                    return;
-                }
-                state.OnNetworkAction = HandleWorldSize;
-            }
-            Console.WriteLine("Recieved User ID:" + userID);
-            Networking.GetData(state);
-        }
-
-        private void HandleWorldSize(SocketState state) {
-            if (state.ErrorOccured) {
-                // inform the view
-                Error("Lost connection to server");
+            // Checks to ensure both the userID and the worldSize have been received
+            if (parts.Length < 3) {
+                Networking.GetData(state);
                 return;
             }
 
-            string s = getNextFullMessage(state);
-            if (s != "") {
-                int worldSize = -1;
-                if (!(Int32.TryParse(s, out worldSize))) {
-                    worldSize = -1;
-                    Error("First message sent be server was not the players ID");
-                    return;
-                }
-                world = new World(worldSize);
-                world.AddAnimation += HandleAnimation;
-                state.OnNetworkAction = HandleWalls;
+            //Removes the used data from the buffer
+            state.RemoveData(0, parts[0].Length + parts[1].Length);
+
+            // try to parse the first message as the user's ID
+            string id = parts[0];
+            if (!(Int32.TryParse(id, out userID))) {
+                Error("First message sent be server was not the players ID");
+                return;
             }
+
+            // try to parse the second message as the world size
+            string size = parts[1];
+            int worldSize = -1;
+            if (!(Int32.TryParse(size, out worldSize))) {
+                worldSize = -1;
+                Error("Failed to receive wallsize");
+                return;
+            }
+
+            //creates a new world
+            world = new World(worldSize);
+            world.AddAnimation += HandleAnimation;
+
+            // prepares to handle the next messages as walls
+            state.OnNetworkAction = HandleWalls;
+
             Networking.GetData(state);
         }
-        private void HandleAnimation(Object o)
-        {
+
+        private void HandleAnimation(Object o) {
             TriggerAnimations(o);
         }
         private void HandleWalls(SocketState state) {
@@ -153,19 +171,22 @@ namespace GameController {
 
             string totalData = state.GetData();
             string[] parts = Regex.Split(totalData, @"(?<=[\n])");
-            //if all the walls have been sent and now a new object is sent (that is not a wall), the client can now send commands
+
+            // Add all wall json
             foreach (string s in parts) {
-                string p = getNextFullMessage(state);
-                if (p != "") {
-                    JObject obj = JObject.Parse(p);
+                if (s != "") {
+
+                    JObject obj = JObject.Parse(s);
                     JToken token;
 
-
+                    // if the json is a valid wall, set it
                     if ((token = obj["wall"]) != null) {
                         lock (world) {
-                            world.setWall(JsonConvert.DeserializeObject<Wall>(p));
+                            world.setWall(JsonConvert.DeserializeObject<Wall>(s));
                         }
                     }
+
+                    // if all the walls have been sent and now a new object is sent (that is not a wall), the client can now send commands
                     else {
                         commandControl = new CommandControl();
                         AllowInput();
@@ -173,7 +194,6 @@ namespace GameController {
                     }
                 }
             }
-
             Networking.GetData(state);
         }
 
@@ -189,17 +209,16 @@ namespace GameController {
                 Error("Lost connection to server");
                 return;
             }
-            //string nextMsg = getNextFullMessage(state);
-            //if (nextMsg != "")
-            //    parseMessage(nextMsg);
+
             ProcessMessages(state);
+
+            // Inform the view that the model will be updated
             newInformation();
+
+            // Inform the server about the user's control commands
             Send(JsonConvert.SerializeObject(commandControl));
 
             // Continue the event loop
-            // state.OnNetworkAction has not been changed, 
-            // so this same method (ReceiveMessage) 
-            // will be invoked when more data arrives
             Networking.GetData(state);
         }
 
@@ -213,68 +232,42 @@ namespace GameController {
             string[] parts = Regex.Split(totalData, @"(?<=[\n])");
 
             // Loop until we have processed all messages.
-            // We may have received more than one.
-
             foreach (string p in parts) {
+
                 // Ignore empty strings added by the regex splitter
                 if (p.Length == 0)
                     continue;
 
-                // The regex splitter will include the last string even if it doesn't end with a '\n',
-                // So we need to ignore it if this happens. 
+                // Ignore incomplete messages
                 if (p[p.Length - 1] != '\n')
                     break;
 
-                parseMessage(p);
+                // If the string contains text, try to parse it as json
+                ParseMessage(p);
 
                 // Then remove it from the SocketState's growable buffer
                 state.RemoveData(0, p.Length);
             }
-
-            // inform the view
-            //MessagesArrived(newMessages);
-        }
-
-        private string getNextFullMessage(SocketState state) {
-            string totalData = state.GetData();
-            string[] parts = Regex.Split(totalData, @"(?<=[\n])");
-            // Loop until we have processed all messages.
-            // We may have received more than one.
-
-            //foreach (string p in parts) {
-            // Ignore empty strings added by the regex splitter
-            string p = parts[0];
-            if (p.Length == 0)
-                //continue;
-                return "";
-
-            // The regex splitter will include the last string even if it doesn't end with a '\n',
-            // So we need to ignore it if this happens. 
-            if (p[p.Length - 1] != '\n')
-                return "";
-
-            // Then remove it from the SocketState's growable buffer
-            state.RemoveData(0, p.Length);
-            //}
-            return p;
-            // inform the view
-            //MessagesArrived(newMessages);
-
-            //Send(JsonConvert.SerializeObject(commandControl));
         }
 
         /// <summary>
         /// Will use received data to update the model
         /// </summary>
         /// <param name="p"></param>
-        private void parseMessage(string p) {
+        private void ParseMessage(string p) {
+
+            // Assume the message is json
             JObject obj = JObject.Parse(p);
             JToken token;
+
+            // lock the world to prevent it from updating while the view is drawing
             lock (world) {
+
+                // Handle each valid json type
                 if ((token = obj["tank"]) != null) {
                     world.setTankData(JsonConvert.DeserializeObject<Tank>(p));
                     if (world.Players.ContainsKey(userID)) {
-                        lastUserLocation = world.Players[userID].Location;
+                        lastUserLocation = world.Players[userID].location;
                     }
                 }
                 else if ((token = obj["proj"]) != null) {
@@ -287,7 +280,6 @@ namespace GameController {
                     world.setBeamData(JsonConvert.DeserializeObject<Beam>(p));
                 }
             }
-
         }
 
         /// <summary>
@@ -297,54 +289,71 @@ namespace GameController {
             theServer?.TheSocket.Close();
         }
 
-        public void updateTDir(Vector2D angle) {
+        /// <summary>
+        /// Updates the commandControl's stored turret direction
+        /// </summary>
+        public void UpdateTDir(Vector2D angle) {
             angle.Normalize();
             commandControl.tDirection = angle;
         }
 
-        public void mousePressed(string mouse) {
+        /// <summary>
+        /// Updates the comandControl's firing state
+        /// </summary>
+        /// <param name="mouse"></param>
+        public void MousePressed(string mouse) {
             if (mouse == "left")
                 commandControl.fire = "main";
             if (mouse == "right")
                 commandControl.fire = "alt";
         }
 
+        /// <summary>
+        /// Set the commandControl's firing state to none
+        /// </summary>
         public void mouseReleased() {
             commandControl.fire = "none";
         }
 
-        public void SendMoveRequest(string code) {
-            //Console.WriteLine("Why isnt it sending?????");
+        /// <summary>
+        /// Updates the commandControl's movement list
+        /// </summary>
+        /// <param name="code"></param>
+        public void UpdateMoveCommand(string code) {
             switch (code) {
                 case "W":
-                    commandControl.addCommand("up");
+                    commandControl.AddCommand("up");
                     break;
                 case "A":
-                    commandControl.addCommand("left");
+                    commandControl.AddCommand("left");
                     break;
                 case "S":
-                    commandControl.addCommand("down");
+                    commandControl.AddCommand("down");
                     break;
                 case "D":
-                    commandControl.addCommand("right");
+                    commandControl.AddCommand("right");
                     break;
             }
 
         }
 
+        /// <summary>
+        /// Cancels the specified movement command from the commandControl
+        /// </summary>
+        /// <param name="code"></param>
         public void CancelMoveRequest(string code) {
             switch (code) {
                 case "W":
-                    commandControl.removeCommand("up");
+                    commandControl.RemoveCommand("up");
                     break;
                 case "A":
-                    commandControl.removeCommand("left");
+                    commandControl.RemoveCommand("left");
                     break;
                 case "S":
-                    commandControl.removeCommand("down");
+                    commandControl.RemoveCommand("down");
                     break;
                 case "D":
-                    commandControl.removeCommand("right");
+                    commandControl.RemoveCommand("right");
                     break;
             }
         }

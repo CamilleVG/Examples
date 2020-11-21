@@ -60,40 +60,35 @@ namespace Model {
         /// </summary>
         /// <param name="t"></param>
         public void setTankData(Tank t) {
-            if (!Players.ContainsKey(t.ID) && (t.HP != 0))
-            {
-                Players.Add(t.ID, t);
+            if (!Players.ContainsKey(t.id) && (t.hitPoints != 0)) {
+                Players.Add(t.id, t);
             }
-            else if (t.HP != 0)
-            {
-                Players[t.ID] = t;
+            else if (t.hitPoints != 0) {
+                Players[t.id] = t;
             }
-            else
-            {
-                if (t.Died)
-                {
-                    Players.Remove(t.ID);
-                    AddAnimation(new Explosion(t.Location));
+            else {
+                if (t.died) {
+                    Players.Remove(t.id);
+                    AddAnimation(new Explosion(t.location));
                     return;
                 }
-                if (t.Disconnected)
-                {
-                    Players.Remove(t.ID);
+                if (t.disconnected) {
+                    Players.Remove(t.id);
 
-                    colorOrder.Remove(tankColors[t.ID]);
-                    colorOrder.AddFirst(tankColors[t.ID]);
+                    colorOrder.Remove(tankColors[t.id]);
+                    colorOrder.AddFirst(tankColors[t.id]);
 
-                    tankColors.Remove(t.ID);
+                    tankColors.Remove(t.id);
                 }
             }
-            if (!tankColors.ContainsKey(t.ID)) {
-                tankColors.Add(t.ID, colorOrder.First());
+            if (!tankColors.ContainsKey(t.id)) {
+                tankColors.Add(t.id, colorOrder.First());
                 string temp = colorOrder.First();
                 colorOrder.RemoveFirst();
                 colorOrder.AddLast(temp);
             }
-            
-            
+
+
 
         }
 
@@ -102,15 +97,15 @@ namespace Model {
         /// </summary>
         /// <param name="proj"></param>
         public void setProjData(Projectile proj) {
-            if (!Projectiles.ContainsKey(proj.ID)) {
-                Projectiles.Add(proj.ID, proj);
+            if (!Projectiles.ContainsKey(proj.id)) {
+                Projectiles.Add(proj.id, proj);
             }
             else {
-                Projectiles[proj.ID] = proj;
+                Projectiles[proj.id] = proj;
             }
 
-            if (proj.Died) {
-                Projectiles.Remove(proj.ID);
+            if (proj.died) {
+                Projectiles.Remove(proj.id);
             }
 
         }
@@ -120,15 +115,15 @@ namespace Model {
         /// </summary>
         /// <param name="power"></param>
         public void setPowerupData(Powerup power) {
-            if (!Powerups.ContainsKey(power.ID)) {
-                Powerups.Add(power.ID, power);
+            if (!Powerups.ContainsKey(power.id)) {
+                Powerups.Add(power.id, power);
             }
             else {
-                Powerups[power.ID] = power;
+                Powerups[power.id] = power;
             }
 
             if (power.Died) {
-                Powerups.Remove(power.ID);
+                Powerups.Remove(power.id);
             }
         }
 

@@ -1,40 +1,43 @@
-﻿using System;
+﻿// Authors: Preston Powell and Camille Van Ginkel
+// PS8 code for Daniel Kopta's CS 3500 class at the University of Utah Fall 2020
+// Version 1.0.3, Nov 2020
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 using TankWars;
 using Newtonsoft.Json;
 namespace Model {
+
+    /// <summary>
+    /// Represents a projectile object
+    /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class Projectile {
+
         [JsonProperty(PropertyName = "proj")]
-        private int id;
+        public int id {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "loc")]
-        private Vector2D location;
+        public Vector2D location {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "dir")]
-        private Vector2D orientation;
+        public Vector2D orientation {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "died")]
-        private bool died;
+        public bool died {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "owner")]
-        private int owner;
-
-        public int ID {
-            get => id;
-        }
-        public bool Died {
-            get => died;
-        }
-        public int Owner {
-            get => owner;
-        }
-        public Vector2D Location {
-            get => location;
-        }
-        public Vector2D Orientation {
-            get => orientation;
+        public int owner {
+            get; private set;
         }
     }
 }

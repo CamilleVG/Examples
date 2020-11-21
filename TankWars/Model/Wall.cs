@@ -4,65 +4,62 @@ using System.Text;
 using TankWars;
 using Newtonsoft.Json;
 
-namespace Model
-{
+namespace Model {
     [JsonObject(MemberSerialization.OptIn)]
-    public class Wall
-    {
+    public class Wall {
         [JsonProperty(PropertyName = "wall")]
-        private int id;
+        public int id {
+            get; private set;
+        }
 
         // CHECK THESE POINTS -- TODO
 
         [JsonProperty(PropertyName = "p1")]
-        private Vector2D firstPoint;
+        public Vector2D firstPoint {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "p2")]
-        private Vector2D secondPoint;
-
-        public int orientation;
-
-        public int ID {
-            get => id;
+        public Vector2D secondPoint {
+            get; private set;
         }
 
-        public Vector2D FirstPoint
-        {
+        public int orientation {
+            get; private set;
+        }
+
+        public Vector2D FirstPoint {
             get => firstPoint;
         }
-        public Vector2D SecondPoint
-        {
+        public Vector2D SecondPoint {
             get => secondPoint;
         }
 
-        public void Orient()
-        {
-            if (firstPoint.GetX() == secondPoint.GetX()){
-                orientation = Constants.VERTICAL;  
+        /// <summary>
+        /// Sets the orientation of the entire wall (vertical vs horizontal)
+        /// </summary>
+        public void Orient() {
 
+            // If the x points match the wall must be vertical
+            if (firstPoint.GetX() == secondPoint.GetX()) {
+                orientation = Constants.VERTICAL;
             }
-            else
-            {
+            else {
                 orientation = Constants.HORIZONTAL;
             }
         }
 
-        public void GetPoint(out double topLeftX, out double topLeftY)
-        {
-            if (firstPoint.GetX() < secondPoint.GetX())
-            {
+        public void GetPoints(out double topLeftX, out double topLeftY) {
+            if (firstPoint.GetX() < secondPoint.GetX()) {
                 topLeftX = firstPoint.GetX();
             }
-            else
-            {
+            else {
                 topLeftX = secondPoint.GetX();
             }
-            if (firstPoint.GetY() < secondPoint.GetY())
-            {
+            if (firstPoint.GetY() < secondPoint.GetY()) {
                 topLeftY = firstPoint.GetY();
             }
-            else
-            {
+            else {
                 topLeftY = secondPoint.GetY();
             }
         }

@@ -9,63 +9,63 @@ namespace Model {
     public class Tank {
 
         [JsonProperty(PropertyName = "tank")]
-        private int id;
+        public int id {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "loc")]
-        private Vector2D location;
+        public Vector2D location {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "bdir")]
-        private Vector2D orientation;
+        public Vector2D orientation {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "tdir")]
-        private Vector2D aiming = new Vector2D(0, -1);
+        public Vector2D tdir {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "name")]
-        private string name;
+        public string name {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "hp")]
-        private int hitPoints = Constants.MaxHP;
+        public int hitPoints {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "score")]
-        private int score = 0;
+        public int score {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "died")]
-        private bool died = false;
+        public bool died {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "dc")]
-        private bool disconnected = false;
+        public bool disconnected {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "join")]
-        private bool joined = false;
-
-
-        public int ID {
-            get => id;
-        }
-        public Vector2D tdir {
-            get => aiming;
-        }
-        public bool Disconnected {
-            get => disconnected;
+        public bool joined {
+            get; private set;
         }
 
-        public bool Died {
-            get => died;
-        }
-
-        public Vector2D Location {
-            get => location;
-        }
-        public Vector2D Orientation {
-            get => orientation;
-        }
-        public int HP
-        {
-            get => hitPoints;
-        }
 
         public Tank() {
-
+            joined = false;
+            disconnected = false;
+            hitPoints = Constants.MaxHP;
+            tdir = new Vector2D(0, -1);
+            score = 0;
+            died = false;
         }
 
 
