@@ -159,6 +159,10 @@ namespace GameController {
             Networking.GetData(state);
         }
 
+        /// <summary>
+        /// Queues animation in the view
+        /// </summary>
+        /// <param name="o"></param>
         private void HandleAnimation(Object o) {
             TriggerAnimations(o);
         }
