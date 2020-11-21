@@ -318,8 +318,8 @@ namespace View {
         }
         private void ProjectileDrawer(object o, PaintEventArgs e) {
             Projectile p = o as Projectile;
-            Tank t = theWorld.Players[p.owner];
-            Image projImage = playerColors[theWorld.getTankColor(t.id)].Item3;
+            //Tank t = theWorld.Players[p.owner];
+            Image projImage = playerColors[theWorld.getTankColor(p.owner)].Item3;
             e.Graphics.DrawImage(projImage, -(Constants.PROJECTILESIZE / 2), -(Constants.PROJECTILESIZE / 2), Constants.PROJECTILESIZE, Constants.PROJECTILESIZE);
         }
 
@@ -361,7 +361,7 @@ namespace View {
                 Rectangle r = new Rectangle(-(Constants.BEAMSIZEWIDTH) / 2, -(Constants.BEAMSIZELENGTH), Constants.BEAMSIZEWIDTH, Constants.BEAMSIZELENGTH);
                 // e.Graphics.RotateTransform
                 e.Graphics.DrawImage(beamframes[b.ticker / Constants.BEAMTIMESCALAR], r);
-                b.ticker++;
+                b.advanceTicker();
             }
         }
 
@@ -430,9 +430,9 @@ namespace View {
                     DrawObjectWithTransform(e, tank, theWorld.UniverseSize, tank.location.GetX(), tank.location.GetY(), 0, PlayerNameDrawer);
                 }
 
-                // Draw the Powerups
+                //// Draw the Powerups
                 foreach (Powerup pow in theWorld.Powerups.Values) {
-                    DrawObjectWithTransform(e, pow, theWorld.UniverseSize, pow.Location.GetX(), pow.Location.GetY(), 0, PowerupDrawer);
+                    DrawObjectWithTransform(e, pow, theWorld.UniverseSize, pow.location.GetX(), pow.location.GetY(), 0, PowerupDrawer);
                 }
 
                 // Draw the Projectiles
@@ -461,7 +461,7 @@ namespace View {
                     Beam b = o as Beam;
                     DrawObjectWithTransform(e, b, theWorld.UniverseSize, b.Location.GetX(), b.Location.GetY(), b.Orientation.ToAngle(), BeamDrawer);
                     if (b.AnimationFinished()) {
-                        b.ticker = 0;
+                        //b.advanceTicker = 0;
                         ToRemove.Add(b);
                     }
                 }
