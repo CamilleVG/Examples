@@ -6,12 +6,13 @@ using Model;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Windows.Forms;
 using TankWars;
 
-namespace View {
+namespace View
+{
     public partial class Form1 : Form {
 
         GameController.GameController controller;
@@ -473,7 +474,10 @@ namespace View {
         }
 
 
-
+        /// <summary>
+        /// Beam gif retrieved from https://www.artstation.com/artwork/L2qdYK on Nov. 20
+        /// Explosion gif retrieved from https://webstockreview.net/image/clipart-explosion-cartoon/1751832.html?no1 on Nov. 19
+        /// </summary>
         private void LoadImages() {
             wallImage = Image.FromFile("..\\..\\..\\Resources\\Images\\WallSprite.png");
             wall = ResizeImage(wallImage, Constants.WALLWIDTH, Constants.WALLWIDTH);

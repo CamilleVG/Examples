@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Authors: Preston Powell and Camille Van Ginkel
+// PS8 code for Daniel Kopta's CS 3500 class at the University of Utah Fall 2020
+// Version 1.0.3, Nov 2020
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,13 +29,21 @@ namespace Model {
         public Dictionary<int, Wall> Walls;
         private LinkedList<string> colorOrder;
         private Dictionary<int, string> tankColors;
-
+        
+        /// <summary>
+        /// Returns the color of the specified tank
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public string getTankColor(int id) {
             if (tankColors.ContainsKey(id))
                 return tankColors[id];
             return "";
         }
-
+        /// <summary>
+        /// Creates an object representing the world with length and width of input size
+        /// </summary>
+        /// <param name="size"></param>
         public World(int size) {
             UniverseSize = size;
             Players = new Dictionary<int, Tank>();
@@ -44,6 +55,9 @@ namespace Model {
             addColors();
         }
 
+        /// <summary>
+        /// Adds all possible colors of tanks in the game
+        /// </summary>
         private void addColors() {
             colorOrder.AddLast("blue");
             colorOrder.AddLast("dark");
@@ -60,12 +74,14 @@ namespace Model {
         /// </summary>
         /// <param name="t"></param>
         public void setTankData(Tank t) {
+            //Adds tank to dictionary, or update the tank in dictionary to the passed in tank
             if (!Players.ContainsKey(t.id) && (t.hitPoints != 0)) {
                 Players.Add(t.id, t);
             }
             else if (t.hitPoints != 0) {
                 Players[t.id] = t;
             }
+            //handles players death and disconnects
             else {
                 if (t.died) {
                     Players.Remove(t.id);
@@ -81,14 +97,13 @@ namespace Model {
                     tankColors.Remove(t.id);
                 }
             }
+            //Assigns a tank a color
             if (!tankColors.ContainsKey(t.id)) {
                 tankColors.Add(t.id, colorOrder.First());
                 string temp = colorOrder.First();
                 colorOrder.RemoveFirst();
                 colorOrder.AddLast(temp);
             }
-
-
 
         }
 
@@ -140,7 +155,6 @@ namespace Model {
         /// </summary>
         /// <param name="wall"></param>
         public void setWall(Wall wall) {
-
             if (!Walls.ContainsKey(wall.id)) {
                 Walls.Add(wall.id, wall);
             }
@@ -148,7 +162,6 @@ namespace Model {
                 Walls[wall.id] = wall;
             }
             wall.Orient(); //calculates whether the wall is horizontal or vertical for the drawing panel
-
         }
     }
 }

@@ -1,18 +1,23 @@
-﻿using System;
+﻿// Authors: Preston Powell and Camille Van Ginkel
+// PS8 code for Daniel Kopta's CS 3500 class at the University of Utah Fall 2020
+// Version 1.0.3, Nov 2020
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 using TankWars;
 using Newtonsoft.Json;
 
 namespace Model {
+    /// <summary>
+    /// Represents a wall segment
+    /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class Wall {
         [JsonProperty(PropertyName = "wall")]
         public int id {
             get; private set;
         }
-
-        // CHECK THESE POINTS -- TODO
 
         [JsonProperty(PropertyName = "p1")]
         public Vector2D firstPoint {
@@ -23,16 +28,11 @@ namespace Model {
         public Vector2D secondPoint {
             get; private set;
         }
-
+        /// <summary>
+        /// In order to access orientation, the Orient method must be called
+        /// </summary>
         public int orientation {
             get; private set;
-        }
-
-        public Vector2D FirstPoint {
-            get => firstPoint;
-        }
-        public Vector2D SecondPoint {
-            get => secondPoint;
         }
 
         /// <summary>
@@ -49,6 +49,11 @@ namespace Model {
             }
         }
 
+        /// <summary>
+        /// Sets the passed in variables to the coordinates of the center of the top left unit
+        /// </summary>
+        /// <param name="topLeftX"></param>
+        /// <param name="topLeftY"></param>
         public void GetPoints(out double topLeftX, out double topLeftY) {
             if (firstPoint.GetX() < secondPoint.GetX()) {
                 topLeftX = firstPoint.GetX();

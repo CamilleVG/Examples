@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Authors: Preston Powell and Camille Van Ginkel
+// PS8 code for Daniel Kopta's CS 3500 class at the University of Utah Fall 2020
+// Version 1.0.3, Nov 2020
+using System;
 using TankWars;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

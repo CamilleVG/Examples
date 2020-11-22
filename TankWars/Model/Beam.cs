@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Authors: Preston Powell and Camille Van Ginkel
+// PS8 code for Daniel Kopta's CS 3500 class at the University of Utah Fall 2020
+// Version 1.0.3, Nov 2020
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 using TankWars;
@@ -8,16 +12,27 @@ namespace Model {
     [JsonObject(MemberSerialization.OptIn)]
     public class Beam {
         [JsonProperty(PropertyName = "beam")]
-        private int id;
+        public int id{
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "org")]
-        private Vector2D origin;
+        public Vector2D origin
+        {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "dir")]
-        private Vector2D direction;
+        public Vector2D direction
+        {
+            get; private set;
+        }
 
         [JsonProperty(PropertyName = "owner")]
-        private int ownerID;
+        public int ownerID
+        {
+            get; private set;
+        }
 
         public int ticker {
             get; private set;
@@ -25,16 +40,9 @@ namespace Model {
 
         private int timesLooped = 0;
 
-        public int ID {
-            get => id;
-        }
-        public Vector2D Location {
-            get => origin;
-        }
-        public Vector2D Orientation {
-            get => direction;
-        }
-
+        /// <summary>
+        /// Increments the ticker, which represent the frame the gif is currently on.
+        /// </summary>
         public void advanceTicker() {
             lock (this) {
                 ticker++;
@@ -45,8 +53,10 @@ namespace Model {
             }
         }
 
-
-
+        /// <summary>
+        /// Determines when the gif is finished being displayed
+        /// </summary>
+        /// <returns></returns>
         public bool AnimationFinished() {
             lock (this) {
                 if (ticker >= 4 * Constants.BEAMTIMESCALAR) {

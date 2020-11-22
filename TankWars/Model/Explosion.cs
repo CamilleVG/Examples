@@ -15,12 +15,15 @@ namespace Model {
     /// </summary>
     public class Explosion {
 
-        private readonly Vector2D location;
-        public int ticker;
-
-
-        public Vector2D Location {
-            get => location;
+        //The world location of the explosion object.  Where the Tank was last displayed before it died.
+        public Vector2D location
+        {
+            get; private set;
+        }
+        //Represents the frame in the array of images that the gif is currently on.
+        public int ticker
+        {
+            get; set;
         }
 
         /// <summary>
@@ -39,6 +42,17 @@ namespace Model {
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Increments the ticker, which represent the frame the gif is currently on.
+        /// </summary>
+        public void advanceTicker()
+        {
+            lock (this)
+            {
+                ticker++;
+            }
         }
 
     }
