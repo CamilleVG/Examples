@@ -20,6 +20,7 @@ namespace Model {
         {
             get; private set;
         }
+
         //Represents the frame in the array of images that the gif is currently on.
         public int ticker
         {

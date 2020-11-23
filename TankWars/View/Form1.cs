@@ -11,22 +11,26 @@ using System.Drawing.Imaging;
 using System.Windows.Forms;
 using TankWars;
 
-namespace View
-{
+namespace View {
+
+    /// <summary>
+    /// Holds the form window in which TankWars will displayed
+    /// </summary>
     public partial class Form1 : Form {
 
         GameController.GameController controller;
-        World theWorld;
         DrawingPanel drawingPanel;
 
         public Form1() {
 
             InitializeComponent();
+            // Set the desired size and background color
             ClientSize = new Size(Constants.VIEWSIZE, Constants.VIEWSIZE + Constants.MENUSIZE);
             this.BackColor = Color.Black;
 
-
+            // Make a new controller
             controller = new GameController.GameController();
+
             // register handlers for the controller's events
             controller.newInformation += UpdateView;
             controller.Error += ShowError;
@@ -44,13 +48,21 @@ namespace View
             this.KeyUp += HandleKeyUp;
         }
 
+        /// <summary>
+        /// Informs the controller about the new angle from the center to the mouse when the mouse moves
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void HandleMouseMoved(object sender, MouseEventArgs e) {
-            //double angleFromCenterToMouse = Math.Asin((e.Y - Constants.VIEWSIZE / 2) / (e.X - Constants.VIEWSIZE / 2));
             Vector2D vectorFromCenter = new Vector2D((e.X - Constants.VIEWSIZE / 2), (e.Y - Constants.VIEWSIZE / 2));
             controller.UpdateTDir(vectorFromCenter);
         }
 
-
+        /// <summary>
+        /// Informs the controller that a mouse button has been pressed
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void HandleMouseDown(object sender, MouseEventArgs e) {
             if (e.Button == MouseButtons.Left)
                 controller.MousePressed("left");
@@ -58,11 +70,20 @@ namespace View
                 controller.MousePressed("right");
         }
 
+        /// <summary>
+        /// Informs the controller that a mouse button has been released
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void HandleMouseUp(object sender, MouseEventArgs e) {
-            //if (e.Button == MouseButtons.Left)
             controller.mouseReleased();
         }
 
+        /// <summary>
+        /// Attempts to connect this client to the server
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ConnectButton_Click(object sender, EventArgs e) {
 
             if (ServerTextBox.Text == "") {
@@ -88,31 +109,34 @@ namespace View
             controller.Connect(ServerTextBox.Text);
 
         }
+
+        /// <summary>
+        /// Has the controller send the player's name
+        /// </summary>
         private void HandleConnected() {
-            // Just print a message saying we connected
             controller.Send(NameTextBox.Text);
         }
 
         /// <summary>
-        /// Method called when JSON is received from the server
+        /// Method called when JSON is received from the server and the view needs to be repainted
         /// </summary>
         /// <param name="messages"></param>
         private void UpdateView() {
             this.Invoke(new MethodInvoker(() => this.Invalidate(true)));
-
-            //this.Invoke(new MethodInvoker(() => this.Update()));
-            //System.Drawing.Point mouse = System.Windows.Forms.Cursor.Position;
-            //controller.UpdateMousePosition(mouse.X, mouse.Y);
         }
 
-
+        /// <summary>
+        /// Displays an error message when an error occurs
+        /// </summary>
+        /// <param name="err"></param>
         private void ShowError(string err) {
-
             MessageBox.Show(err);
             this.Invoke(new MethodInvoker(() => { ConnectButton.Enabled = true; ServerTextBox.Enabled = true; NameTextBox.Enabled = true; }));
-
         }
 
+        /// <summary>
+        /// Enables this form to start listening to key presses and mouse events
+        /// </summary>
         private void StartGameFunctionality() {
             // Enable the global form to capture key presses
             KeyPreview = true;
@@ -122,7 +146,7 @@ namespace View
         }
 
         /// <summary>
-        /// Key down handler
+        /// Informs the controller when a key is pressed so movement can be adjusted if needed
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -135,7 +159,7 @@ namespace View
         }
 
         /// <summary>
-        /// Key up handler
+        /// Informs the controller when a key is released so movement can be adjusted if needed
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -167,73 +191,31 @@ namespace View
 
         // Image resources
         Image background;
-        Image wallImage;
         Bitmap wall;
-        Bitmap explosion;
         Image[] explosionframes;
         Image[] beamframes;
 
         // Holds all tuples of tank color images and if they are currently in use
         Dictionary<string, Tuple<Image, Image, Image>> playerColors;
-        HashSet<Object> QueuedAnimations;
 
+        // Holds all animations that are currently active
+        HashSet<Object> ActiveAnimation;
 
+        /// <summary>
+        /// Creates a new drawing panel with the specified controller and preps it for drawing frames of TankWars
+        /// </summary>
+        /// <param name="cntlr"></param>
         public DrawingPanel(GameController.GameController cntlr) {
             DoubleBuffered = true;
             theWorld = cntlr.GetWorld();
             controller = cntlr;
-            QueuedAnimations = new HashSet<object>();
+            ActiveAnimation = new HashSet<object>();
             controller.TriggerAnimations += HandleAnimations;
             playerColors = new Dictionary<string, Tuple<Image, Image, Image>>();
             LoadImages();
         }
         private void HandleAnimations(Object o) {
-            QueuedAnimations.Add(o);
-        }
-
-
-        // Code provided by https://codingvision.net/c-get-frames-from-a-gif.
-        // Retrieved on 20.11.20
-        private Image[] getFrames(Image originalImg) {
-            int numberOfFrames = originalImg.GetFrameCount(FrameDimension.Time);
-            Image[] frames = new Image[numberOfFrames];
-
-            for (int i = 0; i < numberOfFrames; i++) {
-                originalImg.SelectActiveFrame(FrameDimension.Time, i);
-                frames[i] = ((Image)originalImg.Clone());
-            }
-
-            return frames;
-        }
-        /// <summary>
-        /// Resize the image to the specified width and height.
-        /// Method provided by mpen on stackoverflow.com, retieved 11/18/20:
-        /// https://stackoverflow.com/questions/1922040/how-to-resize-an-image-c-sharp
-        /// </summary>
-        /// <param name="image">The image to resize.</param>
-        /// <param name="width">The width to resize to.</param>
-        /// <param name="height">The height to resize to.</param>
-        /// <returns>The resized image.</returns>
-        public static Bitmap ResizeImage(Image image, int width, int height) {
-            var destRect = new Rectangle(0, 0, width, height);
-            var destImage = new Bitmap(width, height);
-
-            destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
-
-            using (var graphics = Graphics.FromImage(destImage)) {
-                graphics.CompositingMode = CompositingMode.SourceCopy;
-                graphics.CompositingQuality = CompositingQuality.HighQuality;
-                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                graphics.SmoothingMode = SmoothingMode.HighQuality;
-                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-                using (var wrapMode = new ImageAttributes()) {
-                    wrapMode.SetWrapMode(WrapMode.TileFlipXY);
-                    graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
-                }
-            }
-
-            return destImage;
+            ActiveAnimation.Add(o);
         }
 
         /// <summary>
@@ -278,7 +260,7 @@ namespace View
         /// <summary>
         /// Acts as a drawing delegate for DrawObjectWithTransform
         /// After performing the necessary transformation (translate/rotate)
-        /// DrawObjectWithTransform will invoke this method
+        /// DrawObjectWithTransform will invoke this method and draw a tank body
         /// </summary>
         /// <param name="o">The object to draw</param>
         /// <param name="e">The PaintEventArgs to access the graphics</param>
@@ -292,6 +274,13 @@ namespace View
 
         }
 
+        /// <summary>
+        /// Acts as a drawing delegate for DrawObjectWithTransform
+        /// After performing the necessary transformation (translate/rotate)
+        /// DrawObjectWithTransform will invoke this method and draw a tank turret
+        /// </summary>
+        /// <param name="o">The object to draw</param>
+        /// <param name="e">The PaintEventArgs to access the graphics</param>
         private void TurretDrawer(object o, PaintEventArgs e) {
             Tank t = o as Tank;
 
@@ -305,21 +294,27 @@ namespace View
         /// <summary>
         /// Acts as a drawing delegate for DrawObjectWithTransform
         /// After performing the necessary transformation (translate/rotate)
-        /// DrawObjectWithTransform will invoke this method
+        /// DrawObjectWithTransform will invoke this method and draw a wall
         /// </summary>
         /// <param name="o">The object to draw</param>
         /// <param name="e">The PaintEventArgs to access the graphics</param>
         private void WallDrawer(object o, PaintEventArgs e) {
             Wall w = o as Wall;
-            //Rectangle r = new Rectangle(-(Constants.WALLWIDTH / 2), -(Constants.WALLWIDTH / 2), Constants.WALLWIDTH, Constants.WALLWIDTH);
             using (System.Drawing.TextureBrush wallBrush = new System.Drawing.TextureBrush(wall)) {
-                Rectangle rect = new Rectangle(-(Constants.WALLWIDTH / 2), -(Constants.WALLWIDTH / 2), (int)(Math.Abs(w.FirstPoint.GetX() - w.SecondPoint.GetX()) + 50), (int)(Math.Abs(w.FirstPoint.GetY() - w.SecondPoint.GetY()) + 50));
+                Rectangle rect = new Rectangle(-(Constants.WALLWIDTH / 2), -(Constants.WALLWIDTH / 2), (int)(Math.Abs(w.firstPoint.GetX() - w.secondPoint.GetX()) + 50), (int)(Math.Abs(w.firstPoint.GetY() - w.secondPoint.GetY()) + 50));
                 e.Graphics.FillRectangle(wallBrush, rect);
             }
         }
+
+        /// <summary>
+        /// Acts as a drawing delegate for DrawObjectWithTransform
+        /// After performing the necessary transformation (translate/rotate)
+        /// DrawObjectWithTransform will invoke this method and draw a projectile 
+        /// </summary>
+        /// <param name="o">The object to draw</param>
+        /// <param name="e">The PaintEventArgs to access the graphics</param>
         private void ProjectileDrawer(object o, PaintEventArgs e) {
             Projectile p = o as Projectile;
-            //Tank t = theWorld.Players[p.owner];
             Image projImage = playerColors[theWorld.getTankColor(p.owner)].Item3;
             e.Graphics.DrawImage(projImage, -(Constants.PROJECTILESIZE / 2), -(Constants.PROJECTILESIZE / 2), Constants.PROJECTILESIZE, Constants.PROJECTILESIZE);
         }
@@ -342,12 +337,26 @@ namespace View
             }
         }
 
+        /// <summary>
+        /// Acts as a drawing delegate for DrawObjectWithTransform
+        /// After performing the necessary transformation (translate/rotate)
+        /// DrawObjectWithTransform will invoke this method and draw the necessary portion of the background
+        /// </summary>
+        /// <param name="o">The object to draw</param>
+        /// <param name="e">The PaintEventArgs to access the graphics</param>
         private void BackgroundDrawer(Object o, PaintEventArgs e) {
             int worldSize = controller.GetWorld().UniverseSize;
             Rectangle r = new Rectangle(-worldSize / 2, -worldSize / 2, worldSize, worldSize);
             e.Graphics.DrawImage(background, r);
         }
 
+        /// <summary>
+        /// Acts as a drawing delegate for DrawObjectWithTransform
+        /// After performing the necessary transformation (translate/rotate)
+        /// DrawObjectWithTransform will invoke this method and draw the current frame of an explosion animation
+        /// </summary>
+        /// <param name="o">The object to draw</param>
+        /// <param name="e">The PaintEventArgs to access the graphics</param>
         private void ExplosionDrawer(Object o, PaintEventArgs e) {
             Explosion exp = o as Explosion;
             if (exp.ticker < (explosionframes.Length * Constants.EXPLOSIONTIMESCALAR)) {
@@ -356,6 +365,14 @@ namespace View
                 exp.ticker++;
             }
         }
+
+        /// <summary>
+        /// Acts as a drawing delegate for DrawObjectWithTransform
+        /// After performing the necessary transformation (translate/rotate)
+        /// DrawObjectWithTransform will invoke this method and draw the current frame of a beam animation
+        /// </summary>
+        /// <param name="o">The object to draw</param>
+        /// <param name="e">The PaintEventArgs to access the graphics</param>
         private void BeamDrawer(object o, PaintEventArgs e) {
             Beam b = o as Beam;
             if (b.ticker < (beamframes.Length * Constants.BEAMTIMESCALAR)) {
@@ -366,8 +383,17 @@ namespace View
             }
         }
 
+        /// <summary>
+        /// Acts as a drawing delegate for DrawObjectWithTransform
+        /// After performing the necessary transformation (translate/rotate)
+        /// DrawObjectWithTransform will invoke this method and draw a player health bar
+        /// </summary>
+        /// <param name="o">The object to draw</param>
+        /// <param name="e">The PaintEventArgs to access the graphics</param>
         private void HealthBarDrawer(Object o, PaintEventArgs e) {
             Tank t = o as Tank;
+
+            // Draw the bar in a different color based on the player's remaining health
             using (System.Drawing.SolidBrush brush = new System.Drawing.SolidBrush(Color.Black)) {
                 if (t.hitPoints == 1)
                     brush.Color = Color.Red;
@@ -381,6 +407,13 @@ namespace View
             }
         }
 
+        /// <summary>
+        /// Acts as a drawing delegate for DrawObjectWithTransform
+        /// After performing the necessary transformation (translate/rotate)
+        /// DrawObjectWithTransform will invoke this method and write out a tank's name
+        /// </summary>
+        /// <param name="o">The object to draw</param>
+        /// <param name="e">The PaintEventArgs to access the graphics</param>
         private void PlayerNameDrawer(Object o, PaintEventArgs e) {
             Tank t = o as Tank;
             using (System.Drawing.SolidBrush brush = new System.Drawing.SolidBrush(Color.White)) {
@@ -397,7 +430,11 @@ namespace View
                 theWorld = controller.GetWorld();
                 return;
             }
+
+            // Prevent modification to the world while drawing a frame
             lock (theWorld) {
+
+                // Transforms the current window to the user's coordinates
                 double playerX = controller.GetPlayerX();
                 double playerY = controller.GetPlayerY();
 
@@ -412,9 +449,10 @@ namespace View
                 e.Graphics.TranslateTransform((float)inverseTranslateX, (float)inverseTranslateY);
 
                 DrawObjectWithTransform(e, background, theWorld.UniverseSize, 0, 0, 0, BackgroundDrawer);
-                // Draw everything
 
-                //Draws Explosions and Beams
+                // Draw everything now that the frame has been transformed
+
+                //Draws all animations (i.e. Explosions and Beams)
                 DrawAnimations(e);
 
                 // Draw the Walls
@@ -423,7 +461,7 @@ namespace View
                     DrawObjectWithTransform(e, w, theWorld.UniverseSize, topLeftX, topLeftY, 0, WallDrawer);
                 }
 
-                // Draw the Tanks
+                // Draw each Tank's body, turret, health bar, and name
                 foreach (Tank tank in theWorld.Players.Values) {
                     DrawObjectWithTransform(e, tank, theWorld.UniverseSize, tank.location.GetX(), tank.location.GetY(), tank.orientation.ToAngle(), TankDrawer);
                     DrawObjectWithTransform(e, tank, theWorld.UniverseSize, tank.location.GetX(), tank.location.GetY(), tank.tdir.ToAngle(), TurretDrawer);
@@ -431,7 +469,7 @@ namespace View
                     DrawObjectWithTransform(e, tank, theWorld.UniverseSize, tank.location.GetX(), tank.location.GetY(), 0, PlayerNameDrawer);
                 }
 
-                //// Draw the Powerups
+                // Draw the Powerups
                 foreach (Powerup pow in theWorld.Powerups.Values) {
                     DrawObjectWithTransform(e, pow, theWorld.UniverseSize, pow.location.GetX(), pow.location.GetY(), 0, PowerupDrawer);
                 }
@@ -447,44 +485,53 @@ namespace View
             }
 
         }
+
+        /// <summary>
+        /// Handles the display of currently active animations
+        /// </summary>
+        /// <param name="e"></param>
         private void DrawAnimations(PaintEventArgs e) {
             HashSet<Object> ToRemove = new HashSet<Object>();
-            foreach (Object o in QueuedAnimations) {
+
+            foreach (Object o in ActiveAnimation) {
+                // Animate explosions
                 if (o is Explosion) {
                     Explosion exp = o as Explosion;
-                    DrawObjectWithTransform(e, exp, theWorld.UniverseSize, exp.Location.GetX(), exp.Location.GetY(), 0, ExplosionDrawer);
+                    DrawObjectWithTransform(e, exp, theWorld.UniverseSize, exp.location.GetX(), exp.location.GetY(), 0, ExplosionDrawer);
                     if (exp.AnimationFinished()) {
                         exp.ticker = 0;
                         ToRemove.Add(exp);
                     }
                 }
+                // Animate Beams
                 else if (o is Beam) {
                     Beam b = o as Beam;
-                    DrawObjectWithTransform(e, b, theWorld.UniverseSize, b.Location.GetX(), b.Location.GetY(), b.Orientation.ToAngle(), BeamDrawer);
+                    DrawObjectWithTransform(e, b, theWorld.UniverseSize, b.origin.GetX(), b.origin.GetY(), b.direction.ToAngle(), BeamDrawer);
                     if (b.AnimationFinished()) {
-                        //b.advanceTicker = 0;
                         ToRemove.Add(b);
                     }
                 }
             }
-
+            // Stops animating finished animations
             foreach (Object o in ToRemove) {
-                QueuedAnimations.Remove(o);
+                ActiveAnimation.Remove(o);
             }
         }
 
 
         /// <summary>
+        /// Pre-loads all of the images so they only need to be made once
         /// Beam gif retrieved from https://www.artstation.com/artwork/L2qdYK on Nov. 20
         /// Explosion gif retrieved from https://webstockreview.net/image/clipart-explosion-cartoon/1751832.html?no1 on Nov. 19
         /// </summary>
         private void LoadImages() {
-            wallImage = Image.FromFile("..\\..\\..\\Resources\\Images\\WallSprite.png");
+            Image wallImage = Image.FromFile("..\\..\\..\\Resources\\Images\\WallSprite.png");
             wall = ResizeImage(wallImage, Constants.WALLWIDTH, Constants.WALLWIDTH);
             background = Image.FromFile("..\\..\\..\\Resources\\Images\\Background.png");
             explosionframes = getFrames(Image.FromFile("..\\..\\..\\Resources\\Images\\Explosion.gif"));
             beamframes = getFrames(Image.FromFile("..\\..\\..\\Resources\\Images\\Beam.gif"));
 
+            // Add all tank color image tuples to the dictionary
             // Blue
             playerColors.Add("blue", new Tuple<Image, Image, Image>(Image.FromFile("..\\..\\..\\Resources\\Images\\BlueTank.png"),
                 Image.FromFile("..\\..\\..\\Resources\\Images\\BlueTurret.png"),
@@ -524,9 +571,59 @@ namespace View
             playerColors.Add("yellow", new Tuple<Image, Image, Image>(Image.FromFile("..\\..\\..\\Resources\\Images\\YellowTank.png"),
                 Image.FromFile("..\\..\\..\\Resources\\Images\\YellowTurret.png"),
                 Image.FromFile("..\\..\\..\\Resources\\Images\\shot-yellow.png")));
-
         }
 
+        /// <summary>
+        /// Resize the image to the specified width and height.
+        /// Method provided by mpen on stackoverflow.com, retieved 11/18/20:
+        /// https://stackoverflow.com/questions/1922040/how-to-resize-an-image-c-sharp
+        /// </summary>
+        /// <param name="image">The image to resize.</param>
+        /// <param name="width">The width to resize to.</param>
+        /// <param name="height">The height to resize to.</param>
+        /// <returns>The resized image.</returns>
+        public static Bitmap ResizeImage(Image image, int width, int height) {
+            var destRect = new Rectangle(0, 0, width, height);
+            var destImage = new Bitmap(width, height);
+
+            destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
+
+            // Sets various graphics settings
+            using (var graphics = Graphics.FromImage(destImage)) {
+                graphics.CompositingMode = CompositingMode.SourceCopy;
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                // Resize the image
+                using (var wrapMode = new ImageAttributes()) {
+                    wrapMode.SetWrapMode(WrapMode.TileFlipXY);
+                    graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
+                }
+            }
+
+            return destImage;
+        }
+
+        /// <summary>
+        /// Returns the current frame of an animation
+        /// Code provided by https://codingvision.net/c-get-frames-from-a-gif.
+        /// Retrieved on 20.11.20
+        /// </summary>
+        /// <param name="originalImg"></param>
+        /// <returns></returns>
+        private Image[] getFrames(Image originalImg) {
+            int numberOfFrames = originalImg.GetFrameCount(FrameDimension.Time);
+            Image[] frames = new Image[numberOfFrames];
+
+            for (int i = 0; i < numberOfFrames; i++) {
+                originalImg.SelectActiveFrame(FrameDimension.Time, i);
+                frames[i] = ((Image)originalImg.Clone());
+            }
+
+            return frames;
+        }
 
     }
 }

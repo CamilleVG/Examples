@@ -12,25 +12,22 @@ namespace Model {
     [JsonObject(MemberSerialization.OptIn)]
     public class Beam {
         [JsonProperty(PropertyName = "beam")]
-        public int id{
+        public int id {
             get; private set;
         }
 
         [JsonProperty(PropertyName = "org")]
-        public Vector2D origin
-        {
+        public Vector2D origin {
             get; private set;
         }
 
         [JsonProperty(PropertyName = "dir")]
-        public Vector2D direction
-        {
+        public Vector2D direction {
             get; private set;
         }
 
         [JsonProperty(PropertyName = "owner")]
-        public int ownerID
-        {
+        public int ownerID {
             get; private set;
         }
 

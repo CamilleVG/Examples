@@ -8,6 +8,10 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 
 namespace Model {
+
+    /// <summary>
+    /// Represents a tank and its attributes in the game
+    /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class Tank {
 
@@ -62,6 +66,9 @@ namespace Model {
         }
 
 
+        /// <summary>
+        /// Creates a new tank object
+        /// </summary>
         public Tank() {
             joined = false;
             disconnected = false;
