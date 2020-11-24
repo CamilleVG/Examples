@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
+using TankWars;
 
 namespace Server {
     class Server {
@@ -26,16 +27,21 @@ namespace Server {
 
             // Set everything up
 
+            Console.WriteLine("Reached main");
             // Start an event loop on its own thread for a) accepting connections b) Sending frames
-            Console.WriteLine("Hello World!");
+
+            // Keep the server open
+            Console.Read();
+
         }
 
         private void StartServer() {
             world = new World(2000); // READ WORLD SIZE
             SetupWalls();
-
+            clients = new Dictionary<SocketState, Tank>();
+            Console.WriteLine("Reached Start Server");
             // start accepting clients
-            Networking.StartServer(HandleNewClient, 11000);
+            theServer = Networking.StartServer(HandleNewClient, 11000);
         }
 
         private void SetupWalls() {
@@ -49,16 +55,18 @@ namespace Server {
             if (state.ErrorOccured)
                 return;
 
-            state.OnNetworkAction = handlePlayerName;
+            Console.WriteLine("Reached HandleNewClient");
+            state.OnNetworkAction = HandlePlayerName;
 
             Networking.GetData(state);
         }
 
 
-        private void handlePlayerName(SocketState s) {
+        private void HandlePlayerName(SocketState s) {
             string data = s.GetData();
             string[] parts = Regex.Split(data, @"(?<=[\n])");
 
+            Console.WriteLine("Reached handlePlayerName");
 
             if (parts.Length > 1) {
                 // ASK if name can be more than 16
@@ -69,12 +77,26 @@ namespace Server {
                 s.RemoveData(0, parts[0].Length);
 
                 // Send world size
-                Networking.Send(s.TheSocket, world.UniverseSize + "");
+                Networking.Send(s.TheSocket, world.UniverseSize + "\n");
 
                 // Send all the walls
                 foreach (Wall w in world.Walls.Values) {
-                    Networking.Send(s.TheSocket, JsonConvert.SerializeObject(w));
+                    Networking.Send(s.TheSocket, JsonConvert.SerializeObject(w) + '\n');
                 }
+
+                Console.WriteLine("Reached wall sending");
+
+                // TEST WALL SEND //
+                Wall x = new Wall(new Vector2D(-50, 50), new Vector2D(-50, -100), 0);
+                Networking.Send(s.TheSocket, JsonConvert.SerializeObject(x) + '\n');
+                Networking.Send(s.TheSocket, JsonConvert.SerializeObject(t) + '\n');
+                for (int i = 0; i < 1000; i++) {
+                    Console.WriteLine("Sending the tank again");
+                    System.Threading.Thread.Sleep(40);
+                    Networking.Send(s.TheSocket, JsonConvert.SerializeObject(t) + '\n');
+                }
+
+                ////////////////////
                 // Add the tank to the dictionary so it can start receiving frames
                 clients.Add(s, t);
                 s.OnNetworkAction = handleClientCommands;
