@@ -30,6 +30,7 @@ namespace Model {
         private LinkedList<string> colorOrder;
         private Dictionary<int, string> tankColors;
         
+
         /// <summary>
         /// Returns the color of the specified tank
         /// </summary>
@@ -53,6 +54,27 @@ namespace Model {
             colorOrder = new LinkedList<string>();
             tankColors = new Dictionary<int, string>();
             addColors();
+        }
+
+        /// <summary>
+        /// Creates a world with member variables FramesPerShot and RespawnRate initialized.
+        /// </summary>
+        /// <param name="size"></param>
+        /// <param name="framesPerShot"></param>
+        /// <param name="respawnRate"></param>
+        public World(int size, int framesPerShot, int respawnRate)
+        {
+            UniverseSize = size;
+            FramesPerShot = framesPerShot;
+            RespawnRate = respawnRate;
+            Players = new Dictionary<int, Tank>();
+            Projectiles = new Dictionary<int, Projectile>();
+            Powerups = new Dictionary<int, Powerup>();
+            Walls = new Dictionary<int, Wall>();
+            colorOrder = new LinkedList<string>();
+            tankColors = new Dictionary<int, string>();
+            addColors();
+
         }
 
         /// <summary>

@@ -3,8 +3,10 @@ using NetworkUtil;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
+using System.Xml;
 using TankWars;
 
 namespace Server {
@@ -17,26 +19,95 @@ namespace Server {
         TcpListener theServer;
 
         World world;
+        private int MSPerFrame;
 
 
         static void Main(string[] args) {
-
+            
+            
             // Make a new server
             Server server = new Server();
+            server.ReadSettings("..\\..\\..\\Resources\\Settings.xml");
             server.StartServer();
 
             // Set everything up
 
             Console.WriteLine("Reached main");
             // Start an event loop on its own thread for a) accepting connections b) Sending frames
-
+            
             // Keep the server open
             Console.Read();
-
         }
-
+        private void ReadSettings(string FilePath)
+        {
+            try
+            {
+                Console.WriteLine("A");
+                using (XmlReader reader = XmlReader.Create(FilePath))
+                {
+                    Console.WriteLine("B");
+                    int size = 0;
+                    int respawnRate = 0;
+                    int framesPerShot = 0;
+                    int id = 1;
+                    HashSet<Wall> walls = new HashSet<Wall>();
+                    //Scans through all the nodes in XML file
+                    while (reader.Read())
+                    {
+                        if (reader.IsStartElement())
+                        {
+                            switch (reader.Name)
+                            {
+                                case "wall":
+                                    reader.MoveToNextAttribute();
+                                    reader.MoveToNextAttribute();
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out int p1x);
+                                    reader.MoveToNextAttribute();
+                                    int.TryParse(reader.Value, out int p1y);
+                                    reader.MoveToNextAttribute();
+                                    int.TryParse(reader.Value, out int p2x);
+                                    reader.MoveToNextAttribute();
+                                    int.TryParse(reader.Value, out int p2y);
+                                    Vector2D p1 = new Vector2D(p1x, p1y);
+                                    Vector2D p2 = new Vector2D(p2x, p2y);
+                                    Wall w = new Wall(p1, p2, id);
+                                    id++;
+                                    walls.Add(w);
+                                    break;
+                                case "UniverseSize":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out size);
+                                    world = new World(size);
+                                    break;
+                                case "MSPerFrame":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out this.MSPerFrame);
+                                    break;
+                                case "FramesPerShot":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out framesPerShot);
+                                    break;
+                                case "RespawnRate":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out respawnRate);
+                                    break;
+                            }
+                            world = new World(size, framesPerShot, respawnRate);
+                            foreach (Wall w in walls){
+                                world.setWall(w);
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                Console.WriteLine("Server encountered an error.");
+            }
+        }
         private void StartServer() {
-            world = new World(2000); // READ WORLD SIZE
+            
             SetupWalls();
             clients = new Dictionary<SocketState, Tank>();
             Console.WriteLine("Reached Start Server");
@@ -69,7 +140,7 @@ namespace Server {
             Console.WriteLine("Reached handlePlayerName");
 
             if (parts.Length > 1) {
-                // ASK if name can be more than 16
+                //// ASK if name can be more than 16
 
                 Tank t = new Tank((int)s.ID, parts[0], new TankWars.Vector2D()); // Randomize starting position
                 Networking.Send(s.TheSocket, s.ID + "\n");
