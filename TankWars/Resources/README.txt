@@ -7,10 +7,11 @@ Overall Design:
 
 Animated game features:
 Both the beam attack and the explosion were animated in our client. We chose to animate these by using gif files and displaying the
-appropriate frame determined by keeping track of frames with a ticker variable. Both objects have their own ticker member variables in their
-own class and this allows us to store the animation in an array. This allows us to have multiple animations of the same type running
-simultaneously, and only load each animation once. The gifs were retrieved from online art hubs and were allowable in personal use projects.
-The code used for resizing images and storing gifs in image arrays were retrieved from online sources and credited in the code documentation. 
+appropriate frame of the animation on each call to OnPaint.  The gifs were stored in the view as an Image array and we kept track of frame 
+currently being displayed with a ticker variable. Both objects have their own ticker member variables in their own class. This allows us to have 
+multiple animations of the same type running simultaneously, and only load each animation once. The gifs were retrieved from online art hubs and 
+were allowable in personal use projects. The code used for resizing images and storing gifs in image arrays were retrieved from online sources and 
+credited in the code documentation. 
 
 
 Handle Walls vs Checking Walls in the Processing Loop:

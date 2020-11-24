@@ -122,7 +122,11 @@ namespace View {
         /// </summary>
         /// <param name="messages"></param>
         private void UpdateView() {
-            this.Invoke(new MethodInvoker(() => this.Invalidate(true)));
+            try
+            {
+                this.Invoke(new MethodInvoker(() => this.Invalidate(true)));
+            }
+            catch { }
         }
 
         /// <summary>
