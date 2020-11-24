@@ -78,6 +78,26 @@ namespace Model {
             died = false;
         }
 
+        /// <summary>
+        /// Creates a tank with the specified id and location
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="loc"></param>
+        public Tank(int id, string name, Vector2D loc) {
+            this.id = id;
+            location = loc;
+            this.name = name;
+
+            joined = false;
+            hitPoints = Constants.MaxHP;
+            orientation = new Vector2D(0, -1);
+            tdir = new Vector2D(0, -1);
+            score = 0;
+            died = false;
+            disconnected = false;
+
+        }
+
 
     }
 }
