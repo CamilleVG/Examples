@@ -36,6 +36,26 @@ namespace Model {
         }
 
         /// <summary>
+        /// Default Constructor for JSON
+        /// </summary>
+        public Wall() {
+
+        }
+
+        /// <summary>
+        /// Wall constructor for server
+        /// </summary>
+        /// <param name="p1">First endpoint of wall</param>
+        /// <param name="p2">Second endpoint of wall</param>
+        /// <param name="id"></param>
+        public Wall(Vector2D p1, Vector2D p2, int id) {
+            firstPoint = p1;
+            secondPoint = p2;
+            this.id = id;
+        }
+
+
+        /// <summary>
         /// Sets the orientation of the entire wall (vertical vs horizontal)
         /// </summary>
         public void Orient() {
