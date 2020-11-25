@@ -27,7 +27,9 @@ namespace Model {
         /// Which direction the tank wants to move
         /// </summary>
         [JsonProperty(PropertyName = "moving")]
-        private string moving;
+        public string moving {
+            get; private set;
+        }
 
         /// <summary>
         /// Which firetype the tank wants to shoot

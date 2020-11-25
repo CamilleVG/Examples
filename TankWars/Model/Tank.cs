@@ -65,6 +65,8 @@ namespace Model {
             get; private set;
         }
 
+        public CommandControl commandControl = new CommandControl();
+
 
         /// <summary>
         /// Creates a new tank object
