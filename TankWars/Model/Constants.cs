@@ -28,7 +28,7 @@ namespace Model {
         public static int HEALTHBARHEIGHT = 5;
         public static int HEALTHBARWIDTH = 45;
         public static int TANKSPEED = 2;
-        public static int PROJECTILESPEED = 8;
+        public static int PROJECTILESPEED = 12;
         public static Vector2D UP = new Vector2D(0, -1);
         public static Vector2D DOWN = new Vector2D(0, 1);
         public static Vector2D LEFT = new Vector2D(-1, 0);
