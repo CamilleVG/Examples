@@ -22,17 +22,17 @@ namespace Model {
 
         [JsonProperty(PropertyName = "loc")]
         public Vector2D location {
-            get; private set;
+            get; set;
         }
 
         [JsonProperty(PropertyName = "bdir")]
         public Vector2D orientation {
-            get; private set;
+            get; set;
         }
 
         [JsonProperty(PropertyName = "tdir")]
         public Vector2D tdir {
-            get; private set;
+            get; set;
         }
 
         [JsonProperty(PropertyName = "name")]
@@ -42,7 +42,7 @@ namespace Model {
 
         [JsonProperty(PropertyName = "hp")]
         public int hitPoints {
-            get; private set;
+            get; set;
         }
 
         [JsonProperty(PropertyName = "score")]
@@ -52,7 +52,7 @@ namespace Model {
 
         [JsonProperty(PropertyName = "died")]
         public bool died {
-            get; private set;
+            get; set;
         }
 
         [JsonProperty(PropertyName = "dc")]
@@ -66,11 +66,16 @@ namespace Model {
         }
 
         public CommandControl commandControl = new CommandControl();
-        public int LastShotFrame{
+
+        public int LastShotFrame {
             get; set;
         }
-        public int BeamCount
-        {
+
+        public int BeamCount {
+            get; set;
+        }
+
+        public int diedOnFrame {
             get; set;
         }
 
@@ -106,19 +111,6 @@ namespace Model {
             died = false;
             disconnected = false;
             BeamCount = 0;
-        }
-
-        public void UpdateLocation(Vector2D Location)
-        {
-            this.location = Location;
-        }
-        public void UpdateBDIR(Vector2D bdir)
-        {
-            this.orientation = bdir;
-        }
-        public void UpdateTDIR(Vector2D tdir)
-        {
-            this.tdir = tdir;
         }
 
     }

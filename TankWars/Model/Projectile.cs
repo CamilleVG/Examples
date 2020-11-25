@@ -32,7 +32,7 @@ namespace Model {
 
         [JsonProperty(PropertyName = "died")]
         public bool died {
-            get; private set;
+            get; set;
         }
 
         [JsonProperty(PropertyName = "owner")]
@@ -40,12 +40,10 @@ namespace Model {
             get; private set;
         }
         private static int NextID = 1;
-        public void UpdateLocation(Vector2D Location)
-        {
+        public void UpdateLocation(Vector2D Location) {
             this.location = Location;
         }
-        public Projectile(Vector2D tdir, Vector2D origin, int identity)
-        {
+        public Projectile(Vector2D tdir, Vector2D origin, int identity) {
             orientation = tdir;
             location = origin;
             owner = identity;
