@@ -66,6 +66,13 @@ namespace Model {
         }
 
         public CommandControl commandControl = new CommandControl();
+        public int LastShotFrame{
+            get; set;
+        }
+        public int BeamCount
+        {
+            get; set;
+        }
 
 
         /// <summary>
@@ -78,6 +85,7 @@ namespace Model {
             tdir = new Vector2D(0, -1);
             score = 0;
             died = false;
+            BeamCount = 0;
         }
 
         /// <summary>
@@ -97,12 +105,20 @@ namespace Model {
             score = 0;
             died = false;
             disconnected = false;
-
+            BeamCount = 0;
         }
 
         public void UpdateLocation(Vector2D Location)
         {
             this.location = Location;
+        }
+        public void UpdateBDIR(Vector2D bdir)
+        {
+            this.orientation = bdir;
+        }
+        public void UpdateTDIR(Vector2D tdir)
+        {
+            this.tdir = tdir;
         }
 
     }
