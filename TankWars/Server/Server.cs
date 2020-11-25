@@ -12,8 +12,10 @@ using System.IO;
 using System.Reflection;
 using System.Diagnostics;
 
-namespace Server {
-    class Server {
+namespace Server
+{
+    class Server
+    {
 
         // Dictionary used to store all client ids and their connections
         Dictionary<SocketState, Tank> clients;
@@ -23,9 +25,11 @@ namespace Server {
 
         World world;
         private int MSPerFrame;
+        private int Frame;
 
 
-        static void Main(string[] args) {
+        static void Main(string[] args)
+        {
 
             // Make a new server
             Server server = new Server();
@@ -35,49 +39,103 @@ namespace Server {
             // Run an infinite updating thread to recalculate the world every frame
             Stopwatch watch = new Stopwatch();
             watch.Start();
-            while (true) {
-                while (watch.ElapsedMilliseconds < server.MSPerFrame) {   }
+            while (true)
+            {
+                while (watch.ElapsedMilliseconds < server.MSPerFrame) { }
                 watch.Restart();
                 server.updateWorld();
             }
         }
 
 
-        private void updateWorld() {
-            //update model
+        private void updateWorld()
+        {
+            Frame++;//update model
+            HashSet<Beam> BeamsToSend = new HashSet<Beam>();
             lock (world)
             {
                 foreach (Tank t in world.Players.Values)
                 {
-                    
-                    t.UpdateLocation(t.location + new Vector2D());
-                }
-            }
-                lock (clients)
-                {
-                
-                foreach (SocketState s in clients.Keys)
+                    switch (t.commandControl.moving)
                     {
-                        foreach (Tank t in world.Players.Values)
-                        {
-                            Networking.Send(s.TheSocket, JsonConvert.SerializeObject(t) + "\n");
-                        }
-                        foreach (Powerup pow in world.Powerups.Values)
-                        {
-                            Networking.Send(s.TheSocket, JsonConvert.SerializeObject(pow) + "\n");
-                        }
-                        foreach (Projectile proj in world.Projectiles.Values)
-                        {
-                            Networking.Send(s.TheSocket, JsonConvert.SerializeObject(proj) + "\n");
-                        }
+                        case "none":
+                            break;
+                        case "up":
+                            t.UpdateBDIR(Constants.UP);
+                            t.UpdateLocation(t.location + (Constants.UP*Constants.TANKSPEED));
+                            break;
+                        case "down":
+                            t.UpdateBDIR(Constants.DOWN);
+                            t.UpdateLocation(t.location + (Constants.DOWN * Constants.TANKSPEED));
+                            break;
+                        case "right":
+                            t.UpdateBDIR(Constants.RIGHT);
+                            t.UpdateLocation(t.location + (Constants.RIGHT * Constants.TANKSPEED));
+                            break;
+                        case "left":
+                            t.UpdateBDIR(Constants.LEFT);
+                            t.UpdateLocation(t.location + (Constants.LEFT * Constants.TANKSPEED));
+                            break;
+                    }
+                    t.UpdateTDIR(t.commandControl.tDirection);
+                    switch (t.commandControl.fire)
+                    {
+                        case "main":
+                            //Check if firing is allowed
+                            if (this.Frame < t.LastShotFrame + world.FramesPerShot)
+                            {
+                                break;
+                            }
+                            world.setProjData(new Projectile(t.tdir, t.location, t.id));
+                            t.LastShotFrame = this.Frame;
+                            break;
+                        case "alt":
+                            //Check if firing is allowed
+                            if (t.BeamCount > 0)
+                            {
+                                BeamsToSend.Add(new Beam(t.location, t.tdir, t.id));
+                                t.BeamCount--;
+                            }
+                            break;
                     }
                 }
-                
+                foreach (Projectile proj in world.Projectiles.Values)
+                {
+                    proj.UpdateLocation(proj.location + (proj.orientation * Constants.PROJECTILESPEED));
+                }
+            }
+            lock (clients)
+            {
+
+                foreach (SocketState s in clients.Keys)
+                {
+                    foreach (Tank t in world.Players.Values)
+                    {
+                        Networking.Send(s.TheSocket, JsonConvert.SerializeObject(t) + "\n");
+                    }
+                    foreach (Powerup pow in world.Powerups.Values)
+                    {
+                        Networking.Send(s.TheSocket, JsonConvert.SerializeObject(pow) + "\n");
+                    }
+                    foreach (Projectile proj in world.Projectiles.Values)
+                    {
+                        Networking.Send(s.TheSocket, JsonConvert.SerializeObject(proj) + "\n");
+                    }
+                    foreach (Beam beam in BeamsToSend)
+                    {
+                        Networking.Send(s.TheSocket, JsonConvert.SerializeObject(beam) + "\n");
+                    }
+                }
+            }
+
         }
 
-        private void ReadSettings(string FilePath) {
-            try {
-                using (XmlReader reader = XmlReader.Create(FilePath)) {
+        private void ReadSettings(string FilePath)
+        {
+            try
+            {
+                using (XmlReader reader = XmlReader.Create(FilePath))
+                {
                     int size = 0;
                     int respawnRate = 0;
                     int framesPerShot = 0;
@@ -87,9 +145,12 @@ namespace Server {
                     Vector2D p1 = null;
                     HashSet<Wall> walls = new HashSet<Wall>();
                     //Scans through all the nodes in XML file
-                    while (reader.Read()) {
-                        if (reader.IsStartElement()) {
-                            switch (reader.Name) {
+                    while (reader.Read())
+                    {
+                        if (reader.IsStartElement())
+                        {
+                            switch (reader.Name)
+                            {
                                 case "x":
                                     reader.Read();
                                     int.TryParse(reader.Value, out x);
@@ -99,11 +160,13 @@ namespace Server {
                                 case "y":
                                     reader.Read();
                                     int.TryParse(reader.Value, out y);
-                                    if (p1 == null) {
+                                    if (p1 == null)
+                                    {
                                         p1 = new Vector2D(x, y);
                                     }
                                     // If p1 already exists then we have two points and can add a wall
-                                    else {
+                                    else
+                                    {
                                         Wall w = new Wall(p1, new Vector2D(x, y), id);
                                         id++;
                                         walls.Add(w);
@@ -136,16 +199,19 @@ namespace Server {
                         }
                     }
                     world = new World(size, framesPerShot, respawnRate);
-                    foreach (Wall w in walls) {
+                    foreach (Wall w in walls)
+                    {
                         world.setWall(w);
                     }
                 }
             }
-            catch {
+            catch
+            {
                 Console.WriteLine("Server encountered an error.");
             }
         }
-        private void StartServer() {
+        private void StartServer()
+        {
 
             SetupWalls();
             clients = new Dictionary<SocketState, Tank>();
@@ -153,14 +219,16 @@ namespace Server {
             theServer = Networking.StartServer(HandleNewClient, 11000);
         }
 
-        private void SetupWalls() {
+        private void SetupWalls()
+        {
 
         }
 
         // Handle client delegate callback passed to the networking to handle a new client connecting.
         //Change the callback for the socket state to a new method that receives the player's name, then ask for data
 
-        private void HandleNewClient(SocketState state) {
+        private void HandleNewClient(SocketState state)
+        {
             if (state.ErrorOccured)
                 return;
 
@@ -173,12 +241,14 @@ namespace Server {
         /// Gets the player's name and sends startup info
         /// </summary>
         /// <param name="s"></param>
-        private void HandlePlayerName(SocketState s) {
+        private void HandlePlayerName(SocketState s)
+        {
             string data = s.GetData();
             string[] parts = Regex.Split(data, @"(?<=[\n])");
 
 
-            if (parts.Length > 1) {
+            if (parts.Length > 1)
+            {
                 //// ASK if name can be more than 16
 
                 Tank t = new Tank((int)s.ID, parts[0], new TankWars.Vector2D(50, 50)); // Randomize starting position TODOTODO
@@ -193,13 +263,15 @@ namespace Server {
                 Networking.Send(s.TheSocket, world.UniverseSize + "\n");
 
                 // Send all the walls
-                foreach (Wall w in world.Walls.Values) {
+                foreach (Wall w in world.Walls.Values)
+                {
                     Networking.Send(s.TheSocket, JsonConvert.SerializeObject(w) + '\n');
                 }
 
 
                 // Add the tank to the dictionary so it can start receiving frames
-                lock (clients) {
+                lock (clients)
+                {
                     clients.Add(s, t);
                 }
                 s.OnNetworkAction = handleClientCommands;
@@ -215,17 +287,20 @@ namespace Server {
             Networking.GetData(s);
         }
 
-        private void handleClientCommands(SocketState s) {
+        private void handleClientCommands(SocketState s)
+        {
 
             // Ensure it will be a command control TODOTDO
 
             string data = s.GetData();
             string[] parts = Regex.Split(data, @"(?<=[\n])");
 
-            if (parts.Length > 2) {
+            if (parts.Length > 2)
+            {
                 CommandControl cc = JsonConvert.DeserializeObject<CommandControl>(parts[parts.Length - 2]);
 
-                for (int i = 0; i < parts.Length - 1; i++) {
+                for (int i = 0; i < parts.Length - 1; i++)
+                {
                     s.RemoveData(0, parts[i].Length);
                 }
 
