@@ -32,7 +32,7 @@ namespace Server {
             Server server = new Server();
             server.ReadSettings("..\\..\\..\\..\\Resources\\Settings.xml");
             server.StartServer();
-            Console.WriteLine("Server is starting");
+            Console.WriteLine("Server started, now accepting clients");
             // Run an infinite updating thread to recalculate the world every frame
             Stopwatch watch = new Stopwatch();
             watch.Start();
@@ -48,56 +48,55 @@ namespace Server {
             Frame++;//update model
             HashSet<Beam> BeamsToSend = new HashSet<Beam>();
             lock (world) {
-                foreach (Tank t in world.Players.Values) {
-                    // Move each tank in the proper direction if there will not be a collision
-                    switch (t.commandControl.moving) {
-                        case "up":
-                            t.UpdateBDIR(Constants.UP);
-                            if (!CheckForWallCollision(t.location + (Constants.UP * Constants.TANKSPEED), Constants.TANKSIZE / 2))
-                                t.UpdateLocation(t.location + (Constants.UP * Constants.TANKSPEED));
-                            break;
-                        case "down":
-                            t.UpdateBDIR(Constants.DOWN);
-                            if (!CheckForWallCollision(t.location + (Constants.DOWN * Constants.TANKSPEED), Constants.TANKSIZE / 2))
-                                t.UpdateLocation(t.location + (Constants.DOWN * Constants.TANKSPEED));
-                            break;
-                        case "right":
-                            t.UpdateBDIR(Constants.RIGHT);
-                            if (!CheckForWallCollision(t.location + (Constants.RIGHT * Constants.TANKSPEED), Constants.TANKSIZE / 2))
-                                t.UpdateLocation(t.location + (Constants.RIGHT * Constants.TANKSPEED));
-                            break;
-                        case "left":
-                            t.UpdateBDIR(Constants.LEFT);
-                            if (!CheckForWallCollision(t.location + (Constants.LEFT * Constants.TANKSPEED), Constants.TANKSIZE / 2))
-                                t.UpdateLocation(t.location + (Constants.LEFT * Constants.TANKSPEED));
-                            break;
-                    }
-                    t.UpdateTDIR(t.commandControl.tDirection);
 
-                    switch (t.commandControl.fire) {
-                        case "main":
-                            //Check if firing is allowed
-                            if (this.Frame < t.LastShotFrame + world.FramesPerShot) {
-                                break;
-                            }
-                            world.setProjData(new Projectile(t.tdir, t.location, t.id));
-                            t.LastShotFrame = this.Frame;
-                            break;
-                        case "alt":
-                            //Check if firing is allowed
-                            if (t.BeamCount > 0) {
-                                BeamsToSend.Add(new Beam(t.location, t.tdir, t.id));
-                                t.BeamCount--;
-                            }
-                            break;
-                    }
-                }
+                // Update all projectiles
+                HashSet<Projectile> projToRemove = new HashSet<Projectile>();
                 foreach (Projectile proj in world.Projectiles.Values) {
-                    proj.UpdateLocation(proj.location + (proj.orientation * Constants.PROJECTILESPEED));
-                }
-            }
+                    if (!CheckForWallCollision(proj.location + (proj.orientation * Constants.PROJECTILESPEED), 0)) {
 
-            // Send the data to each client
+                        proj.UpdateLocation(proj.location + (proj.orientation * Constants.PROJECTILESPEED));
+
+                        // check to see if the projectile will collide with any tanks and deal damage accordingly
+                        if (CheckForTankCollision(proj, out Tank t)) {
+                            t.hitPoints--;
+                            if (t.hitPoints == 0) {
+                                t.died = true;
+                                t.diedOnFrame = this.Frame;
+                            }
+                            projToRemove.Add(proj);
+                            proj.died = true;
+                        }
+                    }
+                    else {
+                        projToRemove.Add(proj);
+                        proj.died = true;
+                    }
+                }
+
+                // Update all tanks
+                foreach (Tank t in world.Players.Values) {
+                    updateTank(t, BeamsToSend);
+                }
+
+                // Send the data to each client
+                SendDataToAllClients(BeamsToSend);
+
+                // Set all tanks' died properties to false
+                foreach (Tank t in world.Players.Values) {
+                    t.died = false;
+                }
+
+                // Remove dead projectiles
+                foreach (Projectile p in projToRemove)
+                    world.Projectiles.Remove(p.id);
+
+            }
+        }
+
+        /// <summary>
+        /// Sends the data to all clients, including any beams
+        /// </summary>
+        private void SendDataToAllClients(HashSet<Beam> BeamsToSend) {
             lock (clients) {
                 lock (world) {
                     foreach (SocketState s in clients.Keys) {
@@ -116,7 +115,62 @@ namespace Server {
                     }
                 }
             }
+        }
 
+        private void updateTank(Tank t, HashSet<Beam> BeamsToSend) {
+
+            if (t.hitPoints <= 0) {
+                if (Frame >= t.diedOnFrame + world.RespawnRate) {
+                    spawnTank(t);
+                }
+                return;
+            }
+
+            // Move each tank in the proper direction if there will not be a collision
+            switch (t.commandControl.moving) {
+                case "up":
+                    t.orientation = (Constants.UP);
+                    if (!CheckForWallCollision(t.location + (Constants.UP * Constants.TANKSPEED), Constants.TANKSIZE / 2))
+                        t.location += (Constants.UP * Constants.TANKSPEED);
+                    break;
+                case "down":
+                    t.orientation = (Constants.DOWN);
+                    if (!CheckForWallCollision(t.location + (Constants.DOWN * Constants.TANKSPEED), Constants.TANKSIZE / 2))
+                        t.location += (Constants.DOWN * Constants.TANKSPEED);
+                    break;
+                case "right":
+                    t.orientation = (Constants.RIGHT);
+                    if (!CheckForWallCollision(t.location + (Constants.RIGHT * Constants.TANKSPEED), Constants.TANKSIZE / 2))
+                        t.location += (Constants.RIGHT * Constants.TANKSPEED);
+                    break;
+                case "left":
+                    t.orientation = (Constants.LEFT);
+                    if (!CheckForWallCollision(t.location + (Constants.LEFT * Constants.TANKSPEED), Constants.TANKSIZE / 2))
+                        t.location += (Constants.LEFT * Constants.TANKSPEED);
+                    break;
+            }
+
+            // Update turretdirection
+            t.tdir = (t.commandControl.tDirection);
+
+            // Update firing
+            switch (t.commandControl.fire) {
+                case "main":
+                    //Check if firing is allowed
+                    if (this.Frame < t.LastShotFrame + world.FramesPerShot) {
+                        break;
+                    }
+                    world.setProjData(new Projectile(t.tdir, t.location, t.id));
+                    t.LastShotFrame = this.Frame;
+                    break;
+                case "alt":
+                    //Check if firing is allowed
+                    if (t.BeamCount > 0) {
+                        BeamsToSend.Add(new Beam(t.location, t.tdir, t.id));
+                        t.BeamCount--;
+                    }
+                    break;
+            }
         }
 
         /// <summary>
@@ -140,6 +194,46 @@ namespace Server {
             }
             // no walls collide with the tank
             return false;
+        }
+
+        /// <summary>
+        /// Checks if the given point will collide with a circular approximation of any tank and if so sets the out param to that tank
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        private bool CheckForTankCollision(Projectile proj, out Tank t) {
+
+            foreach (Tank tank in world.Players.Values) {
+                if (proj.owner == tank.id || tank.hitPoints <= 0)
+                    continue;
+                if ((proj.location - tank.location).Length() < Constants.TANKSIZE / 2) {
+                    t = tank;
+                    return true;
+                }
+            }
+            t = new Tank();
+            return false;
+        }
+
+        /// <summary>
+        /// Pick a random location with no wall collision for the tank and set its hitpoints to max
+        /// </summary>
+        /// <param name="t"></param>
+        private void spawnTank(Tank t) {
+            t.hitPoints = Constants.MaxHP;
+            Random R = new Random();
+            double x = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
+            double y = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
+            Vector2D location = new Vector2D(x, y);
+
+            // Shuffle location until a non-collision is found
+            while (CheckForWallCollision(location, Constants.TANKSIZE / 2)) {
+                x = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
+                y = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
+                location = new Vector2D(x, y);
+            }
+            t.location = location;
+
         }
 
         private void ReadSettings(string FilePath) {
@@ -250,6 +344,7 @@ namespace Server {
                 //// ASK if name can be more than 16
 
                 Tank t = new Tank((int)s.ID, parts[0].Substring(0, parts[0].Length - 1), new TankWars.Vector2D(50, 50)); // Randomize starting position TODOTODO
+                spawnTank(t);
                 world.setTankData(t);
                 s.RemoveData(0, parts[0].Length);
 
@@ -298,7 +393,6 @@ namespace Server {
                 }
 
                 clients[s].commandControl = cc;
-                Console.WriteLine(cc.moving);
             }
 
             // TODO gracefully handle client disconnects
