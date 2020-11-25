@@ -36,6 +36,24 @@ namespace Model {
         }
 
         private int timesLooped = 0;
+        private static int NextID = 1;
+
+        public Beam()
+        {
+            id = NextID;
+            NextID++;
+            origin = new Vector2D(0,0);
+            direction = new Vector2D(0,0);
+            ownerID = -1;
+        }
+        public Beam(Vector2D location, Vector2D dir, int owner)
+        {
+            id = NextID;
+            NextID++;
+            origin = location;
+            direction = dir;
+            ownerID = owner;
+        }
 
         /// <summary>
         /// Increments the ticker, which represent the frame the gif is currently on.

@@ -39,5 +39,18 @@ namespace Model {
         public int owner {
             get; private set;
         }
+        private static int NextID = 1;
+        public void UpdateLocation(Vector2D Location)
+        {
+            this.location = Location;
+        }
+        public Projectile(Vector2D tdir, Vector2D origin, int identity)
+        {
+            orientation = tdir;
+            location = origin;
+            owner = identity;
+            id = NextID;
+            NextID++;
+        }
     }
 }
