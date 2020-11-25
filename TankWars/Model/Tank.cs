@@ -100,6 +100,10 @@ namespace Model {
 
         }
 
+        public void UpdateLocation(Vector2D Location)
+        {
+            this.location = Location;
+        }
 
     }
 }
