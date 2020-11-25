@@ -31,20 +31,48 @@ namespace Server {
             Server server = new Server();
             server.ReadSettings("..\\..\\..\\..\\Resources\\Settings.xml");
             server.StartServer();
-
+            Console.WriteLine("Server is starting");
             // Run an infinite updating thread to recalculate the world every frame
             Stopwatch watch = new Stopwatch();
+            watch.Start();
             while (true) {
-                while (watch.ElapsedMilliseconds < server.MSPerFrame) { }
-                watch.Reset();
+                while (watch.ElapsedMilliseconds < server.MSPerFrame) {   }
+                watch.Restart();
                 server.updateWorld();
-
             }
         }
 
 
         private void updateWorld() {
-
+            //update model
+            lock (world)
+            {
+                foreach (Tank t in world.Players.Values)
+                {
+                    
+                    t.UpdateLocation(t.location + new Vector2D());
+                }
+            }
+                lock (clients)
+                {
+                
+                foreach (SocketState s in clients.Keys)
+                    {
+                        foreach (Tank t in world.Players.Values)
+                        {
+                            Networking.Send(s.TheSocket, JsonConvert.SerializeObject(t) + "\n");
+                        }
+                        foreach (Powerup pow in world.Powerups.Values)
+                        {
+                            Networking.Send(s.TheSocket, JsonConvert.SerializeObject(pow) + "\n");
+                        }
+                        foreach (Projectile proj in world.Projectiles.Values)
+                        {
+                            Networking.Send(s.TheSocket, JsonConvert.SerializeObject(proj) + "\n");
+                        }
+                    }
+                }
+                
         }
 
         private void ReadSettings(string FilePath) {
@@ -154,7 +182,7 @@ namespace Server {
                 //// ASK if name can be more than 16
 
                 Tank t = new Tank((int)s.ID, parts[0], new TankWars.Vector2D(50, 50)); // Randomize starting position TODOTODO
-
+                world.setTankData(t);
                 s.RemoveData(0, parts[0].Length);
 
                 //Send the player's id
@@ -204,7 +232,6 @@ namespace Server {
                 clients[s].commandControl = cc;
                 Console.WriteLine(cc.moving);
             }
-            Console.WriteLine("Reached sending a new frame");
             Networking.GetData(s);
 
 
