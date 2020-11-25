@@ -88,5 +88,25 @@ namespace Model {
                 topLeftY = secondPoint.GetY();
             }
         }
+
+        /// <summary>
+        /// Sets the passed in variables to the coordinates of the center of the top left unit
+        /// </summary>
+        /// <param name="bottomRightX"></param>
+        /// <param name="bottomRightY"></param>
+        public void GetSecondPoints(out double bottomRightX, out double bottomRightY) {
+            if (firstPoint.GetX() > secondPoint.GetX()) {
+                bottomRightX = firstPoint.GetX();
+            }
+            else {
+                bottomRightX = secondPoint.GetX();
+            }
+            if (firstPoint.GetY() > secondPoint.GetY()) {
+                bottomRightY = firstPoint.GetY();
+            }
+            else {
+                bottomRightY = secondPoint.GetY();
+            }
+        }
     }
 }
