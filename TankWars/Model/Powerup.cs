@@ -29,7 +29,16 @@ namespace Model
 
         [JsonProperty(PropertyName = "died")]
         public bool died {
-            get; private set;
+            get; set;
+        }
+
+        private static int NextID = 1;
+        public Powerup(Vector2D loc)
+        {
+            location = loc;
+            died = false;
+            id = NextID;
+            NextID++;
         }
 
     }

@@ -74,6 +74,10 @@ namespace Model {
         public int BeamCount {
             get; set;
         }
+        public int LastBeamFrame
+        {
+            get; set;
+        }
 
         public int diedOnFrame {
             get; set;

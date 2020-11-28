@@ -18,6 +18,10 @@ namespace Model {
 
         // How many ms must pass before a defeated tank can respawn
         public int RespawnRate { get; private set; }
+        // How many ms must pass before a defeated tank can respawn
+        public int CanAddPowerupFrame{ get; set; }
+        // How many ms must pass before a defeated tank can respawn
+        public int ActivePowerups { get; set; }
 
         public delegate void AnimationRecieved(Object o);
         public event AnimationRecieved AddAnimation;
@@ -53,6 +57,7 @@ namespace Model {
             Walls = new Dictionary<int, Wall>();
             colorOrder = new LinkedList<string>();
             tankColors = new Dictionary<int, string>();
+            ActivePowerups = 0;
             addColors();
         }
 
@@ -62,19 +67,10 @@ namespace Model {
         /// <param name="size"></param>
         /// <param name="framesPerShot"></param>
         /// <param name="respawnRate"></param>
-        public World(int size, int framesPerShot, int respawnRate)
+        public World(int size, int framesPerShot, int respawnRate): this(size)
         {
-            UniverseSize = size;
             FramesPerShot = framesPerShot;
             RespawnRate = respawnRate;
-            Players = new Dictionary<int, Tank>();
-            Projectiles = new Dictionary<int, Projectile>();
-            Powerups = new Dictionary<int, Powerup>();
-            Walls = new Dictionary<int, Wall>();
-            colorOrder = new LinkedList<string>();
-            tankColors = new Dictionary<int, string>();
-            addColors();
-
         }
 
         /// <summary>

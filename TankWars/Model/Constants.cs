@@ -27,11 +27,14 @@ namespace Model {
         public static int BEAMLOOPTIMES = 3;
         public static int HEALTHBARHEIGHT = 5;
         public static int HEALTHBARWIDTH = 45;
-        public static int TANKSPEED = 2;
-        public static int PROJECTILESPEED = 12;
+        public static int TANKSPEED = 10;
+        public static int PROJECTILESPEED = 25;
         public static Vector2D UP = new Vector2D(0, -1);
         public static Vector2D DOWN = new Vector2D(0, 1);
         public static Vector2D LEFT = new Vector2D(-1, 0);
         public static Vector2D RIGHT = new Vector2D(1, 0);
+        public static int MAXPOWERUPS = 2;
+        public static int POWERUPDELAY = 1650;
+        public static int BEAMCOOLDOWN = 30;
     }
 }
