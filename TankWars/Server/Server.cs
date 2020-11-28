@@ -77,6 +77,24 @@ namespace Server {
                 foreach (Tank t in world.Players.Values) {
                     updateTank(t, BeamsToSend);
                 }
+                //Adds powerups if necesary
+                if ((world.ActivePowerups < Constants.MAXPOWERUPS)&& (Frame >= world.CanAddPowerupFrame)) {
+                        Random r = new Random();
+                        world.CanAddPowerupFrame = Frame + r.Next(Constants.POWERUPDELAY);
+                        world.ActivePowerups++;
+                        Powerup pow = spawnPowerup();
+                        world.Powerups.Add(pow.id, pow);
+
+                }
+
+                HashSet<Powerup> PowerupsToRemove = new HashSet<Powerup>();
+                foreach (Powerup p in world.Powerups.Values)
+                {
+                    if (HandlePowerupCollision(p))
+                    {
+                        PowerupsToRemove.Add(p);
+                    }
+                }
 
                 // Send the data to each client
                 SendDataToAllClients(BeamsToSend);
@@ -87,8 +105,14 @@ namespace Server {
                 }
 
                 // Remove dead projectiles
-                foreach (Projectile p in projToRemove)
-                    world.Projectiles.Remove(p.id);
+                foreach (Projectile proj in projToRemove)
+                    world.Projectiles.Remove(proj.id);
+
+                //Removes dead powerups
+                foreach (Powerup pow in PowerupsToRemove)
+                {
+                    world.Powerups.Remove(pow.id);
+                }
 
             }
         }
@@ -165,12 +189,29 @@ namespace Server {
                     break;
                 case "alt":
                     //Check if firing is allowed
-                    if (t.BeamCount > 0) {
+                    if ((t.BeamCount > 0) && (Frame - t.LastBeamFrame > Constants.BEAMCOOLDOWN)) {
                         BeamsToSend.Add(new Beam(t.location, t.tdir, t.id));
                         t.BeamCount--;
+                        t.LastBeamFrame = Frame;
                     }
                     break;
             }
+        }
+        private bool HandlePowerupCollision(Powerup pow)
+        {
+            foreach (Tank tank in world.Players.Values)
+            {
+                if (tank.hitPoints <= 0)
+                    continue;
+                if ((pow.location - tank.location).Length() < Constants.TANKSIZE / 2)
+                {
+                    tank.BeamCount++;
+                    pow.died = true;
+                    world.ActivePowerups--;
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>
@@ -234,6 +275,23 @@ namespace Server {
             }
             t.location = location;
 
+        }
+
+        private Powerup spawnPowerup()
+        {
+            Random R = new Random();
+            double x = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
+            double y = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
+            Vector2D location = new Vector2D(x, y);
+
+            // Shuffle location until a non-collision is found
+            while (CheckForWallCollision(location, Constants.POWERUPOUTER/2))
+            {
+                x = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
+                y = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
+                location = new Vector2D(x, y);
+            }
+            return new Powerup(location);
         }
 
         private void ReadSettings(string FilePath) {
