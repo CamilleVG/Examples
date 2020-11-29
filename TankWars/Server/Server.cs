@@ -59,9 +59,12 @@ namespace Server {
                         // check to see if the projectile will collide with any tanks and deal damage accordingly
                         if (CheckForTankCollision(proj, out Tank t)) {
                             t.hitPoints--;
+                            // check if the collision resulted in a tank's death
                             if (t.hitPoints == 0) {
                                 t.died = true;
                                 t.diedOnFrame = this.Frame;
+                                // increase the killing player's score
+                                world.Players[proj.owner].score++;
                             }
                             projToRemove.Add(proj);
                             proj.died = true;
@@ -77,21 +80,15 @@ namespace Server {
                 foreach (Tank t in world.Players.Values) {
                     updateTank(t, BeamsToSend);
                 }
-                //Adds powerups if necesary
-                if ((world.ActivePowerups < Constants.MAXPOWERUPS)&& (Frame >= world.CanAddPowerupFrame)) {
-                        Random r = new Random();
-                        world.CanAddPowerupFrame = Frame + r.Next(Constants.POWERUPDELAY);
-                        world.ActivePowerups++;
-                        Powerup pow = spawnPowerup();
-                        world.Powerups.Add(pow.id, pow);
 
+                //Adds powerups if necesary
+                if ((world.ActivePowerups < Constants.MAXPOWERUPS) && (Frame >= world.CanAddPowerupFrame)) {
+                    spawnPowerup();
                 }
 
                 HashSet<Powerup> PowerupsToRemove = new HashSet<Powerup>();
-                foreach (Powerup p in world.Powerups.Values)
-                {
-                    if (HandlePowerupCollision(p))
-                    {
+                foreach (Powerup p in world.Powerups.Values) {
+                    if (HandlePowerupCollision(p)) {
                         PowerupsToRemove.Add(p);
                     }
                 }
@@ -104,13 +101,24 @@ namespace Server {
                     t.died = false;
                 }
 
+                HashSet<Tank> TanksToRemove = new HashSet<Tank>();
+
+                // Identify all disconnected tanks
+                foreach (Tank t in world.Players.Values) {
+                    if (t.disconnected)
+                        TanksToRemove.Add(t);
+                }
+
+                // Remove dc'd tanks
+                foreach (Tank t in TanksToRemove)
+                    world.Players.Remove(t.id);
+
                 // Remove dead projectiles
                 foreach (Projectile proj in projToRemove)
                     world.Projectiles.Remove(proj.id);
 
                 //Removes dead powerups
-                foreach (Powerup pow in PowerupsToRemove)
-                {
+                foreach (Powerup pow in PowerupsToRemove) {
                     world.Powerups.Remove(pow.id);
                 }
 
@@ -126,6 +134,11 @@ namespace Server {
                     foreach (SocketState s in clients.Keys) {
                         foreach (Tank t in world.Players.Values) {
                             Networking.Send(s.TheSocket, JsonConvert.SerializeObject(t) + "\n");
+                            ////////////////////////
+                            ///
+                            if (t.id > 1)
+                                Console.WriteLine(JsonConvert.SerializeObject(t));
+                            //////////////////////
                         }
                         foreach (Powerup pow in world.Powerups.Values) {
                             Networking.Send(s.TheSocket, JsonConvert.SerializeObject(pow) + "\n");
@@ -197,14 +210,18 @@ namespace Server {
                     break;
             }
         }
-        private bool HandlePowerupCollision(Powerup pow)
-        {
-            foreach (Tank tank in world.Players.Values)
-            {
+
+
+        /// <summary>
+        /// Checks if a powerup has collided with any tank and updates the tanks beam count and powerup status accordingly
+        /// </summary>
+        /// <param name="pow"></param>
+        /// <returns></returns>
+        private bool HandlePowerupCollision(Powerup pow) {
+            foreach (Tank tank in world.Players.Values) {
                 if (tank.hitPoints <= 0)
                     continue;
-                if ((pow.location - tank.location).Length() < Constants.TANKSIZE / 2)
-                {
+                if ((pow.location - tank.location).Length() < Constants.TANKSIZE / 2) {
                     tank.BeamCount++;
                     pow.died = true;
                     world.ActivePowerups--;
@@ -277,21 +294,26 @@ namespace Server {
 
         }
 
-        private Powerup spawnPowerup()
-        {
+        private void spawnPowerup() {
+
+            Random r = new Random();
+            world.CanAddPowerupFrame = Frame + r.Next(Constants.POWERUPDELAY);
+            world.ActivePowerups++;
+
             Random R = new Random();
             double x = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
             double y = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
             Vector2D location = new Vector2D(x, y);
 
             // Shuffle location until a non-collision is found
-            while (CheckForWallCollision(location, Constants.POWERUPOUTER/2))
-            {
+            while (CheckForWallCollision(location, Constants.POWERUPOUTER / 2)) {
                 x = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
                 y = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
                 location = new Vector2D(x, y);
             }
-            return new Powerup(location);
+            Powerup pow = new Powerup(location);
+
+            world.Powerups.Add(pow.id, pow);
         }
 
         private void ReadSettings(string FilePath) {
@@ -354,6 +376,7 @@ namespace Server {
 
                         }
                     }
+
                     world = new World(size, framesPerShot, respawnRate);
                     foreach (Wall w in walls) {
                         world.setWall(w);
@@ -384,6 +407,7 @@ namespace Server {
             if (state.ErrorOccured)
                 return;
 
+            Console.WriteLine("Client: " + state.ID + " joined.");
             state.OnNetworkAction = HandlePlayerName;
 
             Networking.GetData(state);
@@ -397,27 +421,29 @@ namespace Server {
             string data = s.GetData();
             string[] parts = Regex.Split(data, @"(?<=[\n])");
 
-
             if (parts.Length > 1) {
                 //// ASK if name can be more than 16
 
                 Tank t = new Tank((int)s.ID, parts[0].Substring(0, parts[0].Length - 1), new TankWars.Vector2D(50, 50)); // Randomize starting position TODOTODO
                 spawnTank(t);
-                world.setTankData(t);
-                s.RemoveData(0, parts[0].Length);
 
-                //Send the player's id
-                Networking.Send(s.TheSocket, s.ID + "\n");
+                lock (world) {
+
+                    world.setTankData(t);
+                    s.RemoveData(0, parts[0].Length);
+
+                    //Send the player's id
+                    Networking.Send(s.TheSocket, s.ID + "\n");
 
 
-                // Send world size
-                Networking.Send(s.TheSocket, world.UniverseSize + "\n");
+                    // Send world size
+                    Networking.Send(s.TheSocket, world.UniverseSize + "\n");
 
-                // Send all the walls
-                foreach (Wall w in world.Walls.Values) {
-                    Networking.Send(s.TheSocket, JsonConvert.SerializeObject(w) + '\n');
+                    // Send all the walls
+                    foreach (Wall w in world.Walls.Values) {
+                        Networking.Send(s.TheSocket, JsonConvert.SerializeObject(w) + '\n');
+                    }
                 }
-
 
                 // Add the tank to the dictionary so it can start receiving frames
                 lock (clients) {
@@ -426,19 +452,19 @@ namespace Server {
                 s.OnNetworkAction = handleClientCommands;
             }
 
-            // Sends a bunch of tanks to the client
-            //for (int i = 0; i < 500; i++) {
-            //    Networking.Send(s.TheSocket, JsonConvert.SerializeObject(clients[s]) + '\n');
-            //    System.Threading.Thread.Sleep(10);
-            //    Console.WriteLine("Sending tank: " + JsonConvert.SerializeObject(clients[s]));
-            //}
-
             Networking.GetData(s);
         }
 
         private void handleClientCommands(SocketState s) {
 
             // Ensure it will be a command control TODOTDO
+            if (s.ErrorOccured) {
+                Console.WriteLine("Client: " + s.ID + " disconnected.");
+                lock (world) {
+                    world.Players[(int)s.ID].disconnected = true;
+                }
+                return;
+            }
 
             string data = s.GetData();
             string[] parts = Regex.Split(data, @"(?<=[\n])");
@@ -453,22 +479,7 @@ namespace Server {
                 clients[s].commandControl = cc;
             }
 
-            // TODO gracefully handle client disconnects
             Networking.GetData(s);
-
-
-            /* Receive player name - this is a delegate that implements the server's part of the initial handshake. Make a new Tank with 
-             * the given name and a new unique ID (recommend using the SocketState's ID). Then change the callback to a method that handles 
-             * command requests from the client. Then send the startup info to the client. Then add the client's socket to a list of all 
-             * clients. Then ask the client for data. Note: it is important that the server sends the startup info before adding the client
-             * to the list of all clients. This guarantees that the startup info is sent before any world info. Remember that the server
-             * is running a loop on a separate thread that may send world info to the list of clients at any time.*/
-
-            // Handle data from client - delegate for processing movement commands, NOTE: socket must contain player's ID in order to know
-            //Who sent the movement request, this is what the ID is for in the socket state class
-
-            //Update method invoked every iteration through the frame loop, update world then send to each client
-
         }
     }
 }
