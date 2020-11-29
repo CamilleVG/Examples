@@ -47,7 +47,7 @@ namespace Model {
 
         [JsonProperty(PropertyName = "score")]
         public int score {
-            get; private set;
+            get; set;
         }
 
         [JsonProperty(PropertyName = "died")]
@@ -57,7 +57,7 @@ namespace Model {
 
         [JsonProperty(PropertyName = "dc")]
         public bool disconnected {
-            get; private set;
+            get; set;
         }
 
         [JsonProperty(PropertyName = "join")]
@@ -74,8 +74,7 @@ namespace Model {
         public int BeamCount {
             get; set;
         }
-        public int LastBeamFrame
-        {
+        public int LastBeamFrame {
             get; set;
         }
 
