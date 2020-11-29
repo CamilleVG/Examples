@@ -45,7 +45,7 @@ namespace Server {
 
 
         private void updateWorld() {
-            Frame++;//update model
+            Frame++;
             HashSet<Beam> BeamsToSend = new HashSet<Beam>();
             lock (world) {
 
@@ -62,7 +62,7 @@ namespace Server {
                             // check if the collision resulted in a tank's death
                             if (t.hitPoints == 0) {
                                 t.died = true;
-                                t.diedOnFrame = this.Frame;
+                                t.diedOnFrame = Frame;
                                 // increase the killing player's score
                                 world.Players[proj.owner].score++;
                             }
@@ -93,20 +93,41 @@ namespace Server {
                     }
                 }
 
+                HashSet<Tank> TanksToRemove = new HashSet<Tank>();
+                // Identify all disconnected tanks
+                foreach (Tank t in world.Players.Values) {
+                    if (t.disconnected) {
+                        TanksToRemove.Add(t);
+                        t.hitPoints = 0;
+                    }
+                }
+
+                foreach (Beam b in BeamsToSend) {
+                    Vector2D checkingLocation = b.origin;
+                    while (Math.Abs(checkingLocation.GetX()) < world.UniverseSize / 2 && Math.Abs(checkingLocation.GetY()) < world.UniverseSize / 2) {
+                        // check each tank for a collision
+                        foreach (Tank t in world.Players.Values) {
+                            if (CheckBeamCollision(checkingLocation, t, b.ownerID)) {
+                                t.hitPoints = 0;
+                                t.died = true;
+                                t.diedOnFrame = Frame;
+                                world.Players[b.ownerID].score++;
+                                TanksToRemove.Add(t);
+                            }
+                        }
+                        // keep checking in a diagonal
+                        checkingLocation += b.direction * (Constants.TANKSIZE / 3);
+                    }
+
+                }
+
+
                 // Send the data to each client
                 SendDataToAllClients(BeamsToSend);
 
                 // Set all tanks' died properties to false
                 foreach (Tank t in world.Players.Values) {
                     t.died = false;
-                }
-
-                HashSet<Tank> TanksToRemove = new HashSet<Tank>();
-
-                // Identify all disconnected tanks
-                foreach (Tank t in world.Players.Values) {
-                    if (t.disconnected)
-                        TanksToRemove.Add(t);
                 }
 
                 // Remove dc'd tanks
@@ -163,25 +184,49 @@ namespace Server {
                 return;
             }
 
-            // Move each tank in the proper direction if there will not be a collision
+            // Move each tank in the proper direction or wraparound if there will not be a collision
             switch (t.commandControl.moving) {
                 case "up":
                     t.orientation = (Constants.UP);
+                    // Wrap around to bottom of world if possible
+                    if ((t.location + (Constants.UP * Constants.TANKSPEED)).GetY() < -world.UniverseSize / 2)
+                        if (!CheckForWallCollision(new Vector2D(t.location.GetX(), world.UniverseSize / 2), Constants.TANKSIZE / 2))
+                            t.location = new Vector2D(t.location.GetX(), world.UniverseSize / 2);
+                        else break;
+                    // Check for wall collisions
                     if (!CheckForWallCollision(t.location + (Constants.UP * Constants.TANKSPEED), Constants.TANKSIZE / 2))
                         t.location += (Constants.UP * Constants.TANKSPEED);
                     break;
                 case "down":
                     t.orientation = (Constants.DOWN);
+                    // Wrap around to top of world if possible
+                    if ((t.location + (Constants.DOWN * Constants.TANKSPEED)).GetY() > world.UniverseSize / 2)
+                        if (!CheckForWallCollision(new Vector2D(t.location.GetX(), -world.UniverseSize / 2), Constants.TANKSIZE / 2))
+                            t.location = new Vector2D(t.location.GetX(), -world.UniverseSize / 2);
+                        else break;
+                    // Check for wall collisions
                     if (!CheckForWallCollision(t.location + (Constants.DOWN * Constants.TANKSPEED), Constants.TANKSIZE / 2))
                         t.location += (Constants.DOWN * Constants.TANKSPEED);
                     break;
                 case "right":
                     t.orientation = (Constants.RIGHT);
+                    // Wrap around to left of world if possible
+                    if ((t.location + (Constants.RIGHT * Constants.TANKSPEED)).GetX() > world.UniverseSize / 2)
+                        if (!CheckForWallCollision(new Vector2D(-world.UniverseSize / 2, t.location.GetY()), Constants.TANKSIZE / 2))
+                            t.location = new Vector2D(-world.UniverseSize / 2, t.location.GetY());
+                        else break;
+                    // Check for wall collisions
                     if (!CheckForWallCollision(t.location + (Constants.RIGHT * Constants.TANKSPEED), Constants.TANKSIZE / 2))
                         t.location += (Constants.RIGHT * Constants.TANKSPEED);
                     break;
                 case "left":
                     t.orientation = (Constants.LEFT);
+                    // Wrap around to right of world if possible
+                    if ((t.location + (Constants.LEFT * Constants.TANKSPEED)).GetX() < -world.UniverseSize / 2)
+                        if (!CheckForWallCollision(new Vector2D(world.UniverseSize / 2, t.location.GetY()), Constants.TANKSIZE / 2))
+                            t.location = new Vector2D(world.UniverseSize / 2, t.location.GetY());
+                        else break;
+                    // Check for wall collisions
                     if (!CheckForWallCollision(t.location + (Constants.LEFT * Constants.TANKSPEED), Constants.TANKSIZE / 2))
                         t.location += (Constants.LEFT * Constants.TANKSPEED);
                     break;
@@ -194,11 +239,11 @@ namespace Server {
             switch (t.commandControl.fire) {
                 case "main":
                     //Check if firing is allowed
-                    if (this.Frame < t.LastShotFrame + world.FramesPerShot) {
+                    if (Frame < t.LastShotFrame + world.FramesPerShot) {
                         break;
                     }
                     world.setProjData(new Projectile(t.tdir, t.location, t.id));
-                    t.LastShotFrame = this.Frame;
+                    t.LastShotFrame = Frame;
                     break;
                 case "alt":
                     //Check if firing is allowed
@@ -227,6 +272,22 @@ namespace Server {
                     world.ActivePowerups--;
                     return true;
                 }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if a point collides with the given tank excepting the given id
+        /// </summary>
+        /// <param name="loc"></param>
+        /// <returns></returns>
+        private bool CheckBeamCollision(Vector2D loc, Tank tank, int idOfOwner) {
+            // ignore dead tanks and the tank that shot this beam
+            if (tank.hitPoints <= 0 || tank.id == idOfOwner)
+                return false;
+            // kill any tanks caught at this spot of the beam
+            if ((loc - tank.location).Length() < Constants.TANKSIZE / 2) {
+                return true;
             }
             return false;
         }
@@ -283,6 +344,7 @@ namespace Server {
             double x = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
             double y = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
             Vector2D location = new Vector2D(x, y);
+
 
             // Shuffle location until a non-collision is found
             while (CheckForWallCollision(location, Constants.TANKSIZE / 2)) {
