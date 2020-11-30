@@ -3,12 +3,13 @@
 	<MSPerFrame>16</MSPerFrame>
 	<FramesPerShot>80</FramesPerShot>
 	<RespawnRate>300</RespawnRate>
-	
+
+	<PowerupMode>1</PowerupMode>
 	<BeamCoolDown>180</BeamCoolDown>
 	<MaxHP>5</MaxHP>
 	<PowerupDelay>500</PowerupDelay>
 	<ProjectileSpeed>50</ProjectileSpeed>
-	<TankSpeed>15</TankSpeed>
+	<TankSpeed>3</TankSpeed>
 	<MaxPowerups>10</MaxPowerups>
 
 

@@ -52,13 +52,22 @@ namespace Server {
                 // Update all projectiles
                 HashSet<Projectile> projToRemove = new HashSet<Projectile>();
                 foreach (Projectile proj in world.Projectiles.Values) {
-                    if (!CheckForWallCollision(proj.location + (proj.orientation * Constants.PROJECTILESPEED), 0)) {
+                    int speed = Constants.PROJECTILESPEED;
+                    if (proj.Enhanced)
+                    {
+                        speed = Constants.ENHANCEDPROJECTILESPEED;
+                    }
+                    if (!CheckForWallCollision(proj.location + (proj.orientation * speed), 0)) {
 
-                        proj.UpdateLocation(proj.location + (proj.orientation * Constants.PROJECTILESPEED));
+                        proj.UpdateLocation(proj.location + (proj.orientation * speed));
 
                         // check to see if the projectile will collide with any tanks and deal damage accordingly
                         if (CheckForTankCollision(proj, out Tank t)) {
                             t.hitPoints--;
+                            if (proj.Enhanced && t.hitPoints>2)
+                            {
+                                t.hitPoints--;
+                            }
                             // check if the collision resulted in a tank's death
                             if (t.hitPoints == 0) {
                                 t.died = true;
@@ -185,55 +194,65 @@ namespace Server {
             }
 
             // Move each tank in the proper direction or wraparound if there will not be a collision
+            int speed = Constants.TANKSPEED;
+            if (t.EnhancedSpeed)
+            {
+                speed = Constants.ENHANCEDTANKSPEED;
+                if(Frame >= t.SpeedModeFrame + Constants.SPEEDMODETIME)
+                {
+                    t.EnhancedSpeed = false;
+                }
+            }
             switch (t.commandControl.moving) {
                 case "up":
                     t.orientation = (Constants.UP);
                     // Wrap around to bottom of world if possible
-                    if ((t.location + (Constants.UP * Constants.TANKSPEED)).GetY() < -world.UniverseSize / 2)
+                    if ((t.location + (Constants.UP * speed)).GetY() < -world.UniverseSize / 2)
                         if (!CheckForWallCollision(new Vector2D(t.location.GetX(), world.UniverseSize / 2), Constants.TANKSIZE / 2))
                             t.location = new Vector2D(t.location.GetX(), world.UniverseSize / 2);
                         else break;
                     // Check for wall collisions
-                    if (!CheckForWallCollision(t.location + (Constants.UP * Constants.TANKSPEED), Constants.TANKSIZE / 2))
-                        t.location += (Constants.UP * Constants.TANKSPEED);
+                    if (!CheckForWallCollision(t.location + (Constants.UP * speed), Constants.TANKSIZE / 2))
+                        t.location += (Constants.UP * speed);
                     break;
                 case "down":
                     t.orientation = (Constants.DOWN);
                     // Wrap around to top of world if possible
-                    if ((t.location + (Constants.DOWN * Constants.TANKSPEED)).GetY() > world.UniverseSize / 2)
+                    if ((t.location + (Constants.DOWN * speed)).GetY() > world.UniverseSize / 2)
                         if (!CheckForWallCollision(new Vector2D(t.location.GetX(), -world.UniverseSize / 2), Constants.TANKSIZE / 2))
                             t.location = new Vector2D(t.location.GetX(), -world.UniverseSize / 2);
                         else break;
                     // Check for wall collisions
-                    if (!CheckForWallCollision(t.location + (Constants.DOWN * Constants.TANKSPEED), Constants.TANKSIZE / 2))
-                        t.location += (Constants.DOWN * Constants.TANKSPEED);
+                    if (!CheckForWallCollision(t.location + (Constants.DOWN * speed), Constants.TANKSIZE / 2))
+                        t.location += (Constants.DOWN * speed);
                     break;
                 case "right":
                     t.orientation = (Constants.RIGHT);
                     // Wrap around to left of world if possible
-                    if ((t.location + (Constants.RIGHT * Constants.TANKSPEED)).GetX() > world.UniverseSize / 2)
+                    if ((t.location + (Constants.RIGHT * speed)).GetX() > world.UniverseSize / 2)
                         if (!CheckForWallCollision(new Vector2D(-world.UniverseSize / 2, t.location.GetY()), Constants.TANKSIZE / 2))
                             t.location = new Vector2D(-world.UniverseSize / 2, t.location.GetY());
                         else break;
                     // Check for wall collisions
-                    if (!CheckForWallCollision(t.location + (Constants.RIGHT * Constants.TANKSPEED), Constants.TANKSIZE / 2))
-                        t.location += (Constants.RIGHT * Constants.TANKSPEED);
+                    if (!CheckForWallCollision(t.location + (Constants.RIGHT * speed), Constants.TANKSIZE / 2))
+                        t.location += (Constants.RIGHT * speed);
                     break;
                 case "left":
                     t.orientation = (Constants.LEFT);
                     // Wrap around to right of world if possible
-                    if ((t.location + (Constants.LEFT * Constants.TANKSPEED)).GetX() < -world.UniverseSize / 2)
+                    if ((t.location + (Constants.LEFT * speed)).GetX() < -world.UniverseSize / 2)
                         if (!CheckForWallCollision(new Vector2D(world.UniverseSize / 2, t.location.GetY()), Constants.TANKSIZE / 2))
                             t.location = new Vector2D(world.UniverseSize / 2, t.location.GetY());
                         else break;
                     // Check for wall collisions
-                    if (!CheckForWallCollision(t.location + (Constants.LEFT * Constants.TANKSPEED), Constants.TANKSIZE / 2))
-                        t.location += (Constants.LEFT * Constants.TANKSPEED);
+                    if (!CheckForWallCollision(t.location + (Constants.LEFT * speed), Constants.TANKSIZE / 2))
+                        t.location += (Constants.LEFT * speed);
                     break;
             }
 
             // Update turretdirection
             t.tdir = (t.commandControl.tDirection);
+
 
             // Update firing
             switch (t.commandControl.fire) {
@@ -242,7 +261,17 @@ namespace Server {
                     if (Frame < t.LastShotFrame + world.FramesPerShot) {
                         break;
                     }
-                    world.setProjData(new Projectile(t.tdir, t.location, t.id));
+                    Projectile proj = new Projectile(t.tdir, t.location, t.id);
+                    if (t.EnhancedProjectiles)
+                    {
+                        proj.Enhanced = true;
+                        if (Frame >= t.ProjectileModeFrame + Constants.PROJECTILEMODETIME)
+                        {
+                            proj.Enhanced = false;
+                            t.EnhancedProjectiles = false;
+                        }
+                    }
+                    world.setProjData(proj);
                     t.LastShotFrame = Frame;
                     break;
                 case "alt":
@@ -267,10 +296,35 @@ namespace Server {
                 if (tank.hitPoints <= 0)
                     continue;
                 if ((pow.location - tank.location).Length() < Constants.TANKSIZE / 2) {
-                    tank.BeamCount++;
-                    pow.died = true;
-                    world.ActivePowerups--;
-                    return true;
+                    if (Constants.POWERUPMODE == 0)
+                    {
+                        tank.BeamCount++;
+                        pow.died = true;
+                        world.ActivePowerups--;
+                        return true;
+                    }
+                    else //if mysery powerups are activated
+                    {
+                        Random r = new Random();
+                        switch (r.Next(3))
+                        {
+                            case 0:
+                                tank.BeamCount++;
+                                break;
+                            case 1:
+                                tank.EnhancedSpeed = true;
+                                tank.SpeedModeFrame = Frame;
+                                break;
+                            case 2:
+                                tank.EnhancedProjectiles = true;
+                                tank.ProjectileModeFrame = Frame;
+                                break;
+                        }
+                        pow.died = true;
+                        world.ActivePowerups--;
+                        return true;
+                    }
+                    
                 }
             }
             return false;
@@ -433,6 +487,34 @@ namespace Server {
                                 case "RespawnRate":
                                     reader.Read();
                                     int.TryParse(reader.Value, out respawnRate);
+                                    break;
+                                case "BeamCoolDown":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out Constants.BEAMCOOLDOWN);
+                                    break;
+                                case "MaxHP":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out Constants.MaxHP);
+                                    break;
+                                case "PowerupDelay":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out Constants.POWERUPDELAY);
+                                    break;
+                                case "MaxPowerups":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out Constants.MAXPOWERUPS);
+                                    break;
+                                case "ProjectileSpeed":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out Constants.PROJECTILESPEED);
+                                    break;
+                                case "TankSpeed":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out Constants.TANKSPEED);
+                                    break;
+                                case "PowerupMode":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out Constants.POWERUPMODE);
                                     break;
                             }
 
