@@ -33,6 +33,7 @@ namespace Server {
             server.ReadSettings("..\\..\\..\\..\\Resources\\Settings.xml");
             server.StartServer();
             Console.WriteLine("Server started, now accepting clients");
+
             // Run an infinite updating thread to recalculate the world every frame
             Stopwatch watch = new Stopwatch();
             watch.Start();
@@ -43,51 +44,36 @@ namespace Server {
             }
         }
 
-
+        /// <summary>
+        /// Updates everything needed in a frame
+        /// </summary>
         private void updateWorld() {
             Frame++;
-            HashSet<Beam> BeamsToSend = new HashSet<Beam>();
+
             lock (world) {
 
                 // Update all projectiles
                 HashSet<Projectile> projToRemove = new HashSet<Projectile>();
                 foreach (Projectile proj in world.Projectiles.Values) {
-                    int speed = Constants.PROJECTILESPEED;
-                    if (proj.Enhanced)
-                    {
-                        speed = Constants.ENHANCEDPROJECTILESPEED;
-                    }
-                    if (!CheckForWallCollision(proj.location + (proj.orientation * speed), 0)) {
-
-                        proj.UpdateLocation(proj.location + (proj.orientation * speed));
-
-                        // check to see if the projectile will collide with any tanks and deal damage accordingly
-                        if (CheckForTankCollision(proj, out Tank t)) {
-                            t.hitPoints--;
-                            if (proj.Enhanced && t.hitPoints>2)
-                            {
-                                t.hitPoints--;
-                            }
-                            // check if the collision resulted in a tank's death
-                            if (t.hitPoints == 0) {
-                                t.died = true;
-                                t.diedOnFrame = Frame;
-                                // increase the killing player's score
-                                world.Players[proj.owner].score++;
-                            }
-                            projToRemove.Add(proj);
-                            proj.died = true;
-                        }
-                    }
-                    else {
-                        projToRemove.Add(proj);
-                        proj.died = true;
-                    }
+                    updateProjectile(proj, projToRemove);
                 }
 
                 // Update all tanks
+                HashSet<Beam> BeamsToSend = new HashSet<Beam>();
+                HashSet<Tank> TanksToRemove = new HashSet<Tank>();
                 foreach (Tank t in world.Players.Values) {
+                    // Identify all disconnected tanks
+                    if (t.disconnected) {
+                        TanksToRemove.Add(t);
+                        t.hitPoints = 0;
+                        continue;
+                    }
                     updateTank(t, BeamsToSend);
+                }
+
+                // Create all beams
+                foreach (Beam b in BeamsToSend) {
+                    createBeams(b, TanksToRemove);
                 }
 
                 //Adds powerups if necesary
@@ -95,6 +81,7 @@ namespace Server {
                     spawnPowerup();
                 }
 
+                // Checks for powerup collisions
                 HashSet<Powerup> PowerupsToRemove = new HashSet<Powerup>();
                 foreach (Powerup p in world.Powerups.Values) {
                     if (HandlePowerupCollision(p)) {
@@ -102,42 +89,12 @@ namespace Server {
                     }
                 }
 
-                HashSet<Tank> TanksToRemove = new HashSet<Tank>();
-                // Identify all disconnected tanks
-                foreach (Tank t in world.Players.Values) {
-                    if (t.disconnected) {
-                        TanksToRemove.Add(t);
-                        t.hitPoints = 0;
-                    }
-                }
-
-                foreach (Beam b in BeamsToSend) {
-                    Vector2D checkingLocation = b.origin;
-                    while (Math.Abs(checkingLocation.GetX()) < world.UniverseSize / 2 && Math.Abs(checkingLocation.GetY()) < world.UniverseSize / 2) {
-                        // check each tank for a collision
-                        foreach (Tank t in world.Players.Values) {
-                            if (CheckBeamCollision(checkingLocation, t, b.ownerID)) {
-                                t.hitPoints = 0;
-                                t.died = true;
-                                t.diedOnFrame = Frame;
-                                world.Players[b.ownerID].score++;
-                                TanksToRemove.Add(t);
-                            }
-                        }
-                        // keep checking in a diagonal
-                        checkingLocation += b.direction * (Constants.TANKSIZE / 3);
-                    }
-
-                }
-
-
                 // Send the data to each client
                 SendDataToAllClients(BeamsToSend);
 
                 // Set all tanks' died properties to false
-                foreach (Tank t in world.Players.Values) {
+                foreach (Tank t in world.Players.Values)
                     t.died = false;
-                }
 
                 // Remove dc'd tanks
                 foreach (Tank t in TanksToRemove)
@@ -148,9 +105,8 @@ namespace Server {
                     world.Projectiles.Remove(proj.id);
 
                 //Removes dead powerups
-                foreach (Powerup pow in PowerupsToRemove) {
+                foreach (Powerup pow in PowerupsToRemove)
                     world.Powerups.Remove(pow.id);
-                }
 
             }
         }
@@ -164,11 +120,6 @@ namespace Server {
                     foreach (SocketState s in clients.Keys) {
                         foreach (Tank t in world.Players.Values) {
                             Networking.Send(s.TheSocket, JsonConvert.SerializeObject(t) + "\n");
-                            ////////////////////////
-                            ///
-                            if (t.id > 1)
-                                Console.WriteLine(JsonConvert.SerializeObject(t));
-                            //////////////////////
                         }
                         foreach (Powerup pow in world.Powerups.Values) {
                             Networking.Send(s.TheSocket, JsonConvert.SerializeObject(pow) + "\n");
@@ -184,8 +135,80 @@ namespace Server {
             }
         }
 
+        /// <summary>
+        /// Updates the position and collisions for a projectile, and if it dies adds it to the given HashSet and marks it as dead
+        /// </summary>
+        /// <param name="proj"></param>
+        /// <param name="projToRemove"></param>
+        private void updateProjectile(Projectile proj, HashSet<Projectile> projToRemove) {
+            // Determine if speed is enhanced
+            int speed = Constants.PROJECTILESPEED;
+            if (proj.Enhanced) {
+                speed = Constants.ENHANCEDPROJECTILESPEED;
+            }
+            // Check for collisions
+            if (!CheckForWallCollision(proj.location + (proj.orientation * speed), 0)) {
+
+                proj.UpdateLocation(proj.location + (proj.orientation * speed));
+
+                // check to see if the projectile will collide with any tanks and deal damage accordingly
+                if (CheckForTankCollision(proj, out Tank t)) {
+                    t.hitPoints--;
+                    if (proj.Enhanced && t.hitPoints > 1) {
+                        t.hitPoints--;
+                    }
+                    // check if the collision resulted in a tank's death
+                    if (t.hitPoints == 0) {
+                        t.died = true;
+                        t.diedOnFrame = Frame;
+                        // increase the killing player's score
+                        world.Players[proj.owner].score++;
+                    }
+                    projToRemove.Add(proj);
+                    proj.died = true;
+                }
+            }
+            // If a wall collision occured, kill the projectile
+            else {
+                projToRemove.Add(proj);
+                proj.died = true;
+            }
+        }
+
+        /// <summary>
+        /// Creates beams, checks for collisions and adds any caught tanks into the given hashset
+        /// </summary>
+        /// <param name="b"></param>
+        /// <param name="TanksToRemove"></param>
+        private void createBeams(Beam b, HashSet<Tank> TanksToRemove) {
+            Vector2D checkingLocation = b.origin;
+
+            // Update a point along the beam's diagonal
+            while (Math.Abs(checkingLocation.GetX()) < world.UniverseSize / 2 && Math.Abs(checkingLocation.GetY()) < world.UniverseSize / 2) {
+                // check each tank for a collision
+                foreach (Tank t in world.Players.Values) {
+                    if (CheckBeamCollision(checkingLocation, t, b.ownerID)) {
+                        t.hitPoints = 0;
+                        t.died = true;
+                        t.diedOnFrame = Frame;
+                        world.Players[b.ownerID].score++;
+                        TanksToRemove.Add(t);
+                    }
+                }
+                // keep checking in the diagonal
+                checkingLocation += b.direction * (Constants.TANKSIZE / 3);
+            }
+        }
+
+        /// <summary>
+        /// Updates the given tank's movement, turret direction, respawns if possible, and handles firing of projectiles and beams 
+        /// (passes beams into given hashet to be fired elsewhere)
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="BeamsToSend"></param>
         private void updateTank(Tank t, HashSet<Beam> BeamsToSend) {
 
+            // Respawn tank if dead and enough time has passed
             if (t.hitPoints <= 0) {
                 if (Frame >= t.diedOnFrame + world.RespawnRate) {
                     spawnTank(t);
@@ -193,16 +216,13 @@ namespace Server {
                 return;
             }
 
-            // Move each tank in the proper direction or wraparound if there will not be a collision
+            // Enhance speed if needed
             int speed = Constants.TANKSPEED;
-            if (t.EnhancedSpeed)
-            {
+            if (t.EnhancedSpeed) {
                 speed = Constants.ENHANCEDTANKSPEED;
-                if(Frame >= t.SpeedModeFrame + Constants.SPEEDMODETIME)
-                {
-                    t.EnhancedSpeed = false;
-                }
             }
+
+            // Handle tank movement, block if a collision with a wall will occur, wraparound if possible and necessary
             switch (t.commandControl.moving) {
                 case "up":
                     t.orientation = (Constants.UP);
@@ -258,24 +278,36 @@ namespace Server {
             switch (t.commandControl.fire) {
                 case "main":
                     //Check if firing is allowed
-                    if (Frame < t.LastShotFrame + world.FramesPerShot) {
-                        break;
-                    }
-                    Projectile proj = new Projectile(t.tdir, t.location, t.id);
-                    if (t.EnhancedProjectiles)
-                    {
-                        proj.Enhanced = true;
-                        if (Frame >= t.ProjectileModeFrame + Constants.PROJECTILEMODETIME)
-                        {
-                            proj.Enhanced = false;
-                            t.EnhancedProjectiles = false;
+                    // For a faster firing tank
+                    if (t.FasterFireRate) {
+                        if (Frame < t.LastShotFrame + world.FramesPerShot / 4) {
+                            break;
                         }
+                    }
+                    // For a normal tank
+                    else {
+                        if (Frame < t.LastShotFrame + world.FramesPerShot) {
+                            break;
+                        }
+                    }
+
+                    // Enable enhance projectiles if available
+                    if (t.ProjectileEnhacementAvailable && !t.EnhancedProjectiles) {
+                        t.EnhancedProjectiles = true;
+                        t.ProjectileModeFrame = Frame;
+                    }
+
+                    // Handle creation of enhanced projectiles
+                    Projectile proj = new Projectile(t.tdir, t.location, t.id);
+                    if (t.EnhancedProjectiles) {
+                        proj.Enhanced = true;
                     }
                     world.setProjData(proj);
                     t.LastShotFrame = Frame;
                     break;
+
                 case "alt":
-                    //Check if firing is allowed
+                    //Check if firing a beam is allowed
                     if ((t.BeamCount > 0) && (Frame - t.LastBeamFrame > Constants.BEAMCOOLDOWN)) {
                         BeamsToSend.Add(new Beam(t.location, t.tdir, t.id));
                         t.BeamCount--;
@@ -283,48 +315,69 @@ namespace Server {
                     }
                     break;
             }
+
+            // Check if faster fire rate has expired
+            if (Frame >= t.FasterFireRateStartFrame + Constants.FASTERFIRERATETIME) {
+                t.FasterFireRate = false;
+            }
+
+            // Check if enhanced speed has expired
+            if (Frame >= t.SpeedModeFrame + Constants.ENHANCEDTANKSPEEDTIME) {
+                t.EnhancedSpeed = false;
+            }
+
+            // Check if enhanced projectiles has expired
+            if (Frame >= t.ProjectileModeFrame + Constants.ENHANCEDPROJECTILETIME) {
+                t.EnhancedProjectiles = false;
+            }
         }
 
 
         /// <summary>
-        /// Checks if a powerup has collided with any tank and updates the tanks beam count and powerup status accordingly
+        /// Checks if a powerup has collided with any tank and updates the tanks beam count and powerup status accordingly,
+        /// or generates a random powerup if mystery powerups is active
         /// </summary>
         /// <param name="pow"></param>
         /// <returns></returns>
         private bool HandlePowerupCollision(Powerup pow) {
+
             foreach (Tank tank in world.Players.Values) {
+                // ignore dead tanks
                 if (tank.hitPoints <= 0)
                     continue;
+                // approximate tank collisions using a circular tank
                 if ((pow.location - tank.location).Length() < Constants.TANKSIZE / 2) {
-                    if (Constants.POWERUPMODE == 0)
-                    {
+                    // Standard behavior is powerups grant a beam attack
+                    if (Constants.MYSTERYPOWERUPS == 0) {
                         tank.BeamCount++;
-                        pow.died = true;
-                        world.ActivePowerups--;
-                        return true;
                     }
-                    else //if mysery powerups are activated
-                    {
+                    // If mystery powerups are activated, pick randomly from the mystery effects
+                    else {
                         Random r = new Random();
-                        switch (r.Next(3))
-                        {
-                            case 0:
+                        switch (r.Next(5)) {
+                            case 0: // Standard Beam Attack
                                 tank.BeamCount++;
                                 break;
-                            case 1:
+                            case 1: // Enhanced Tank Speed
                                 tank.EnhancedSpeed = true;
                                 tank.SpeedModeFrame = Frame;
                                 break;
-                            case 2:
-                                tank.EnhancedProjectiles = true;
-                                tank.ProjectileModeFrame = Frame;
+                            case 2: // Enhanced projectile speed and damage
+                                tank.ProjectileEnhacementAvailable = true;
+                                break;
+                            case 3: // Rapid Fire Rate
+                                tank.FasterFireRate = true;
+                                tank.FasterFireRateStartFrame = Frame;
+                                break;
+                            case 4: // Full Heal
+                                tank.hitPoints = Constants.MaxHP;
                                 break;
                         }
-                        pow.died = true;
-                        world.ActivePowerups--;
-                        return true;
                     }
-                    
+                    // Remove the powerup
+                    pow.died = true;
+                    world.ActivePowerups--;
+                    return true;
                 }
             }
             return false;
@@ -347,7 +400,7 @@ namespace Server {
         }
 
         /// <summary>
-        /// returns true if the location with padding will intersect any of the walls, false otherwise
+        /// Returns true if the location with padding will intersect any of the walls, false otherwise
         /// </summary>
         /// <param name="location"></param>
         /// <param name="padding"></param>
@@ -356,6 +409,7 @@ namespace Server {
 
             foreach (Wall w in world.Walls.Values) {
 
+                // Top leftmost units center point
                 w.GetPoints(out double topLeftX, out double topLeftY);
                 w.GetSecondPoints(out double bottomRightX, out double bottomRightY);
 
@@ -377,8 +431,10 @@ namespace Server {
         private bool CheckForTankCollision(Projectile proj, out Tank t) {
 
             foreach (Tank tank in world.Players.Values) {
+                // Ignore the tank that owns the projectile
                 if (proj.owner == tank.id || tank.hitPoints <= 0)
                     continue;
+                // Check for collision approximating the tank as a circle
                 if ((proj.location - tank.location).Length() < Constants.TANKSIZE / 2) {
                     t = tank;
                     return true;
@@ -393,7 +449,10 @@ namespace Server {
         /// </summary>
         /// <param name="t"></param>
         private void spawnTank(Tank t) {
+            // Full Heal
             t.hitPoints = Constants.MaxHP;
+
+            // Pick two random points
             Random R = new Random();
             double x = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
             double y = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
@@ -410,13 +469,17 @@ namespace Server {
 
         }
 
+        /// <summary>
+        /// Creates a powerup in a random location that does not collide with walls
+        /// </summary>
         private void spawnPowerup() {
 
-            Random r = new Random();
-            world.CanAddPowerupFrame = Frame + r.Next(Constants.POWERUPDELAY);
+            // Mark what frame this powerup is being added on
+            Random R = new Random();
+            world.CanAddPowerupFrame = Frame + R.Next(Constants.POWERUPDELAY);
             world.ActivePowerups++;
 
-            Random R = new Random();
+            // Generate a random location
             double x = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
             double y = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
             Vector2D location = new Vector2D(x, y);
@@ -427,11 +490,15 @@ namespace Server {
                 y = R.NextDouble() * world.UniverseSize - world.UniverseSize / 2;
                 location = new Vector2D(x, y);
             }
+            // Create the new powerup in the world
             Powerup pow = new Powerup(location);
-
             world.Powerups.Add(pow.id, pow);
         }
 
+        /// <summary>
+        /// Read all the xml Settings and update the world and constants class accordingly
+        /// </summary>
+        /// <param name="FilePath"></param>
         private void ReadSettings(string FilePath) {
             try {
                 using (XmlReader reader = XmlReader.Create(FilePath)) {
@@ -471,7 +538,6 @@ namespace Server {
                                 case "UniverseSize":
                                     reader.Read();
                                     int.TryParse(reader.Value, out size);
-                                    world = new World(size);
                                     break;
 
                                 case "MSPerFrame":
@@ -488,39 +554,71 @@ namespace Server {
                                     reader.Read();
                                     int.TryParse(reader.Value, out respawnRate);
                                     break;
+
                                 case "BeamCoolDown":
                                     reader.Read();
                                     int.TryParse(reader.Value, out Constants.BEAMCOOLDOWN);
                                     break;
+
                                 case "MaxHP":
                                     reader.Read();
                                     int.TryParse(reader.Value, out Constants.MaxHP);
                                     break;
+
                                 case "PowerupDelay":
                                     reader.Read();
                                     int.TryParse(reader.Value, out Constants.POWERUPDELAY);
                                     break;
+
                                 case "MaxPowerups":
                                     reader.Read();
                                     int.TryParse(reader.Value, out Constants.MAXPOWERUPS);
                                     break;
+
                                 case "ProjectileSpeed":
                                     reader.Read();
                                     int.TryParse(reader.Value, out Constants.PROJECTILESPEED);
                                     break;
+
                                 case "TankSpeed":
                                     reader.Read();
                                     int.TryParse(reader.Value, out Constants.TANKSPEED);
                                     break;
-                                case "PowerupMode":
+
+                                case "MysteryPowerups":
                                     reader.Read();
-                                    int.TryParse(reader.Value, out Constants.POWERUPMODE);
+                                    int.TryParse(reader.Value, out Constants.MYSTERYPOWERUPS);
+                                    break;
+
+                                case "EnhancedProjectileSpeed":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out Constants.ENHANCEDPROJECTILESPEED);
+                                    break;
+
+                                case "EnhancedTankSpeed":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out Constants.ENHANCEDTANKSPEED);
+                                    break;
+
+                                case "EnhancedProjectileTime":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out Constants.ENHANCEDPROJECTILETIME);
+                                    break;
+
+                                case "EnhancedTankSpeedTime":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out Constants.ENHANCEDTANKSPEEDTIME);
+                                    break;
+
+                                case "EnhancedFireRateTime":
+                                    reader.Read();
+                                    int.TryParse(reader.Value, out Constants.FASTERFIRERATETIME);
                                     break;
                             }
-
                         }
                     }
 
+                    // Create the new world and set up all the walls
                     world = new World(size, framesPerShot, respawnRate);
                     foreach (Wall w in walls) {
                         world.setWall(w);
@@ -532,25 +630,26 @@ namespace Server {
                 Console.WriteLine("Server encountered an error.");
             }
         }
+
+        /// <summary>
+        /// Starts the server and sets up the walls
+        /// </summary>
         private void StartServer() {
 
-            SetupWalls();
             clients = new Dictionary<SocketState, Tank>();
             // start accepting clients
             theServer = Networking.StartServer(HandleNewClient, 11000);
         }
 
-        private void SetupWalls() {
-
-        }
-
-        // Handle client delegate callback passed to the networking to handle a new client connecting.
-        //Change the callback for the socket state to a new method that receives the player's name, then ask for data
-
+        /// <summary>
+        /// When a new client connects indicates a new client has joined in the console and prepares to receive its name
+        /// </summary>
+        /// <param name="state"></param>
         private void HandleNewClient(SocketState state) {
             if (state.ErrorOccured)
                 return;
 
+            // Signal a client has joined
             Console.WriteLine("Client: " + state.ID + " joined.");
             state.OnNetworkAction = HandlePlayerName;
 
@@ -565,20 +664,21 @@ namespace Server {
             string data = s.GetData();
             string[] parts = Regex.Split(data, @"(?<=[\n])");
 
+            // Check if a full message has been received
             if (parts.Length > 1) {
-                //// ASK if name can be more than 16
 
-                Tank t = new Tank((int)s.ID, parts[0].Substring(0, parts[0].Length - 1), new TankWars.Vector2D(50, 50)); // Randomize starting position TODOTODO
+                // Generate a new tank for the client
+                Tank t = new Tank((int)s.ID, parts[0].Substring(0, parts[0].Length - 1), new TankWars.Vector2D(50, 50));
                 spawnTank(t);
 
                 lock (world) {
 
+                    // Add the tank to the world
                     world.setTankData(t);
                     s.RemoveData(0, parts[0].Length);
 
                     //Send the player's id
                     Networking.Send(s.TheSocket, s.ID + "\n");
-
 
                     // Send world size
                     Networking.Send(s.TheSocket, world.UniverseSize + "\n");
@@ -593,15 +693,18 @@ namespace Server {
                 lock (clients) {
                     clients.Add(s, t);
                 }
-                s.OnNetworkAction = handleClientCommands;
+                s.OnNetworkAction = HandleClientCommands;
             }
-
             Networking.GetData(s);
         }
 
-        private void handleClientCommands(SocketState s) {
+        /// <summary>
+        /// Handles all client sent commands and updates their tank accordingly so that it can be processed on the next frame
+        /// </summary>
+        /// <param name="s"></param>
+        private void HandleClientCommands(SocketState s) {
 
-            // Ensure it will be a command control TODOTDO
+            // Handle errors
             if (s.ErrorOccured) {
                 Console.WriteLine("Client: " + s.ID + " disconnected.");
                 lock (world) {
@@ -613,16 +716,29 @@ namespace Server {
             string data = s.GetData();
             string[] parts = Regex.Split(data, @"(?<=[\n])");
 
+            // Try to deserialize messages as valid commands
             if (parts.Length > 2) {
-                CommandControl cc = JsonConvert.DeserializeObject<CommandControl>(parts[parts.Length - 2]);
+                try {
+                    CommandControl cc = JsonConvert.DeserializeObject<CommandControl>(parts[parts.Length - 2]);
 
-                for (int i = 0; i < parts.Length - 1; i++) {
-                    s.RemoveData(0, parts[i].Length);
+                    // Remove all processed data
+                    for (int i = 0; i < parts.Length - 1; i++) {
+                        s.RemoveData(0, parts[i].Length);
+                    }
+
+                    // Update the client's command control object
+                    clients[s].commandControl = cc;
                 }
-
-                clients[s].commandControl = cc;
+                // Disconnect client if invalid commands are received
+                catch {
+                    Console.WriteLine("Client: " + s.ID + " disconnected.");
+                    lock (world) {
+                        world.Players[(int)s.ID].disconnected = true;
+                    }
+                    return;
+                }
             }
-
+            // loop
             Networking.GetData(s);
         }
     }
