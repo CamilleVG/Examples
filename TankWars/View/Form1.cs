@@ -403,7 +403,7 @@ namespace View {
                     brush.Color = Color.Red;
                 if (t.hitPoints == 2)
                     brush.Color = Color.Yellow;
-                if (t.hitPoints == 3)
+                if (t.hitPoints >= 3)
                     brush.Color = Color.Green;
 
                 Rectangle r = new Rectangle(-Constants.HEALTHBARWIDTH / 2, -((Constants.TANKSIZE / 2) + Constants.HEALTHBARHEIGHT * 2), t.hitPoints * (Constants.HEALTHBARWIDTH / 3), Constants.HEALTHBARHEIGHT);
