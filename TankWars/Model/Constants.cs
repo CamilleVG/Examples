@@ -12,14 +12,17 @@ namespace Model {
         public static int VERTICAL = 0; // Signifies a wall has a vertical orientation
 
         public static int MaxHP = 3;
-        public static int MAXPOWERUPS = 2;
+        public static int MAXPOWERUPS = 4;
         public static int BEAMCOOLDOWN = 30;
         public static int POWERUPDELAY = 1650;
         public static int PROJECTILESPEED = 25;
-        public static int POWERUPMODE = 0;  //0 for default, 1 for mystery powerups
-        public static int TANKSPEED = 3;
-        public static int ENHANCEDTANKSPEED = 12;
-        public static int ENHANCEDPROJECTILESPEED = 75;
+        public static int MYSTERYPOWERUPS = 0;  //0 for default, 1 for mystery powerups
+        public static int TANKSPEED = 4;
+        public static int ENHANCEDTANKSPEED = 10;
+        public static int ENHANCEDPROJECTILESPEED = 50;
+        public static int ENHANCEDPROJECTILETIME = 600;
+        public static int ENHANCEDTANKSPEEDTIME = 600;
+        public static int FASTERFIRERATETIME = 600;
         
 
         public const int BEAMLOOPTIMES = 3;
@@ -34,8 +37,6 @@ namespace Model {
         public const int POWERUPINNER = 12; // Inner circle radius on a powerup
         public const int POWERUPOUTER = 18; // Outer circle radius and effective size of a powerup
         public const int PROJECTILESIZE = 30;
-        public const int PROJECTILEMODETIME = 300;
-        public const int SPEEDMODETIME = 500;
         public const int TANKSIZE = 60;
         public const int TURRETSIZE = 50;
         public const int VIEWSIZE = 900;
