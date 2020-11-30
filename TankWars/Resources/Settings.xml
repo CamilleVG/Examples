@@ -4,14 +4,19 @@
 	<FramesPerShot>80</FramesPerShot>
 	<RespawnRate>300</RespawnRate>
 
-	<PowerupMode>1</PowerupMode>
-	<BeamCoolDown>180</BeamCoolDown>
-	<MaxHP>5</MaxHP>
-	<PowerupDelay>500</PowerupDelay>
-	<ProjectileSpeed>50</ProjectileSpeed>
-	<TankSpeed>3</TankSpeed>
-	<MaxPowerups>10</MaxPowerups>
+	<BeamCoolDown>30</BeamCoolDown>
+	<MaxHP>3</MaxHP>
+	<PowerupDelay>1650</PowerupDelay>
+	<ProjectileSpeed>25</ProjectileSpeed>
+	<TankSpeed>4</TankSpeed>
+	<MaxPowerups>5</MaxPowerups>
 
+	<MysteryPowerups>1</MysteryPowerups> <!--0 for default gamemode, 1 for MysteryPowerups-->
+	<EnhancedProjectileSpeed>50</EnhancedProjectileSpeed>
+	<EnhancedTankSpeed>10</EnhancedTankSpeed>
+	<EnhancedProjectileTime>600</EnhancedProjectileTime>
+	<EnhancedTankSpeedTime>600</EnhancedTankSpeedTime>
+	<EnhancedFireRateTime>600</EnhancedFireRateTime>
 
 	<!-- top border -->
 	<Wall>

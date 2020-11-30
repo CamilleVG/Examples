@@ -3,7 +3,52 @@ Preston Powell and Camille Van Ginkel
 Parts of the code taken from Daniel Kopta CS3500 University of Utah Fall 2020 class with permission
 
 
-Overall Design:
+Overall Design Server:
+
+-Notable Setting-
+
+MysteryPowerups: 
+This an alternative gamemode, the setting 0 will be the base game and any other setting will be Mystery Powerups. The gamemode
+features 5 different possible effects when a powerup is obtained including: the standard beam, enhanced tank speed, enhanced projectiles (speed and damage),
+enhanced fire rate (4x, hardcoded), full heal. Each lasts for around 10 seconds (600 frames) but can be adjusted in the settings.
+
+BeamCooldown: 
+This is meant to be a safety buffer on firing the beam to prevent the player from wasting their beams. The default is .5 sec (30 frames) and a 
+player must wait that long before firing the next beam. This is not intended to restrict the player, and can be adjusted as desired. 
+
+Other XML Settings:
+We wanted to add any constants with a realistic use for changing from the constants class to the XML file. This includes the MaxHP value, the
+maximum delay before a powerup spawns, the maximum number of powerups on the field at a given time, the projectile, and the tank speed, as well
+as the time settings for each powerup from MysteryPowerups.
+
+Default Settings:
+Many of the default settings are the same but we chose to raise the maximum number of powerups on the field to 4 by default for more interesting
+gameplay. We also chose to up the base tank speed to 4.
+
+- Code Design -
+Beam Collision Detection:
+In order to check for beam collisions we loop over checkpoints along the diagonal spaced about 1/6 of a tank's size apart and check for tank
+collisions at each point.
+
+Wall TP Blocking:
+We decided to prevent a player from being able to wraparound/teleport to the other side of the world even if a wall was missing if the other side
+had a wall that would result in the player getting teleported into a wall.
+
+Approximating the Tank:
+We chose to follow Professor Kopta's advice and approximate the tank as a circle for collisions with everything except walls.
+
+Static Server vs Server Object:
+We chose to keep the server as an object that could be created rather than a collection of static methods. With some small modifications
+this would allow one machine to run several servers with the same program if desired.
+
+
+
+
+
+
+
+
+Overall Design Client:
 
 Animated game features:
 Both the beam attack and the explosion were animated in our client. We chose to animate these by using gif files and displaying the
