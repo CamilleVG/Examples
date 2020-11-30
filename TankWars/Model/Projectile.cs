@@ -39,6 +39,10 @@ namespace Model {
         public int owner {
             get; private set;
         }
+        public bool Enhanced
+        {
+            get; set;
+        }
         private static int NextID = 1;
         public void UpdateLocation(Vector2D Location) {
             this.location = Location;
@@ -48,6 +52,7 @@ namespace Model {
             location = origin;
             owner = identity;
             id = NextID;
+            Enhanced = false;
             NextID++;
         }
     }

@@ -82,6 +82,27 @@ namespace Model {
             get; set;
         }
 
+        public bool EnhancedSpeed
+        {
+            get; set;
+        }
+        public int SpeedModeFrame
+        {
+            get; set;
+        }
+        public bool EnhancedProjectiles
+        {
+            get; set;
+        }
+        public int ProjectileModeFrame
+        {
+            get; set;
+        }
+        public int ProjectileEnhacementAvailable
+        {
+            get; set;
+        }
+
 
         /// <summary>
         /// Creates a new tank object
@@ -90,10 +111,15 @@ namespace Model {
             joined = false;
             disconnected = false;
             hitPoints = Constants.MaxHP;
+            orientation = new Vector2D(0, -1);
             tdir = new Vector2D(0, -1);
             score = 0;
             died = false;
             BeamCount = 0;
+            EnhancedSpeed = false;
+            SpeedModeFrame = 0;
+            EnhancedProjectiles = false;
+            ProjectileModeFrame = 0;
         }
 
         /// <summary>
@@ -101,19 +127,19 @@ namespace Model {
         /// </summary>
         /// <param name="id"></param>
         /// <param name="loc"></param>
-        public Tank(int id, string name, Vector2D loc) {
+        public Tank(int id, string name, Vector2D loc) : this(){
             this.id = id;
             location = loc;
             this.name = name;
 
-            joined = false;
-            hitPoints = Constants.MaxHP;
-            orientation = new Vector2D(0, -1);
-            tdir = new Vector2D(0, -1);
-            score = 0;
-            died = false;
-            disconnected = false;
-            BeamCount = 0;
+            //joined = false;
+            //hitPoints = Constants.MaxHP;
+            //orientation = new Vector2D(0, -1);
+            //tdir = new Vector2D(0, -1);
+            //score = 0;
+            //died = false;
+            //disconnected = false;
+            //BeamCount = 0;
         }
 
     }
