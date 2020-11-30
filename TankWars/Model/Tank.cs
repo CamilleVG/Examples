@@ -82,24 +82,27 @@ namespace Model {
             get; set;
         }
 
-        public bool EnhancedSpeed
-        {
+        public bool EnhancedSpeed {
             get; set;
         }
-        public int SpeedModeFrame
-        {
+        public int SpeedModeFrame {
             get; set;
         }
-        public bool EnhancedProjectiles
-        {
+        public bool EnhancedProjectiles {
             get; set;
         }
-        public int ProjectileModeFrame
-        {
+        public int ProjectileModeFrame {
             get; set;
         }
-        public int ProjectileEnhacementAvailable
-        {
+        public bool ProjectileEnhacementAvailable {
+            get; set;
+        }
+
+        public bool FasterFireRate {
+            get; set;
+        }
+
+        public int FasterFireRateStartFrame {
             get; set;
         }
 
@@ -120,6 +123,9 @@ namespace Model {
             SpeedModeFrame = 0;
             EnhancedProjectiles = false;
             ProjectileModeFrame = 0;
+            ProjectileEnhacementAvailable = false;
+            FasterFireRate = false;
+            FasterFireRateStartFrame = 0;
         }
 
         /// <summary>
@@ -127,7 +133,7 @@ namespace Model {
         /// </summary>
         /// <param name="id"></param>
         /// <param name="loc"></param>
-        public Tank(int id, string name, Vector2D loc) : this(){
+        public Tank(int id, string name, Vector2D loc) : this() {
             this.id = id;
             location = loc;
             this.name = name;
