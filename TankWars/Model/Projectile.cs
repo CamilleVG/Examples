@@ -22,7 +22,7 @@ namespace Model {
 
         [JsonProperty(PropertyName = "loc")]
         public Vector2D location {
-            get; private set;
+            get; set;
         }
 
         [JsonProperty(PropertyName = "dir")]
@@ -39,18 +39,28 @@ namespace Model {
         public int owner {
             get; private set;
         }
+
+        /// <summary>
+        /// Whether this projectile is faster and does more damage
+        /// </summary>
         public bool Enhanced
         {
             get; set;
         }
+
+        // Statically keeps track of the next projectile ID to be assigned
         private static int NextID = 1;
-        public void UpdateLocation(Vector2D Location) {
-            this.location = Location;
-        }
-        public Projectile(Vector2D tdir, Vector2D origin, int identity) {
+
+        /// <summary>
+        /// Creates a new projectile with the given properties
+        /// </summary>
+        /// <param name="tdir"></param>
+        /// <param name="origin"></param>
+        /// <param name="ownerID"></param>
+        public Projectile(Vector2D tdir, Vector2D origin, int ownerID) {
             orientation = tdir;
             location = origin;
-            owner = identity;
+            owner = ownerID;
             id = NextID;
             Enhanced = false;
             NextID++;

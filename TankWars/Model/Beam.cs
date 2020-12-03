@@ -9,8 +9,10 @@ using TankWars;
 using Newtonsoft.Json;
 
 namespace Model {
+
     [JsonObject(MemberSerialization.OptIn)]
     public class Beam {
+
         [JsonProperty(PropertyName = "beam")]
         public int id {
             get; private set;
@@ -36,8 +38,13 @@ namespace Model {
         }
 
         private int timesLooped = 0;
+
+        // Statically holds the next id to be assigned to the beam
         private static int NextID = 1;
 
+        /// <summary>
+        /// Creates a default beam
+        /// </summary>
         public Beam()
         {
             id = NextID;
@@ -46,6 +53,13 @@ namespace Model {
             direction = new Vector2D(0,0);
             ownerID = -1;
         }
+
+        /// <summary>
+        /// Creates a new beam
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="dir"></param>
+        /// <param name="owner"></param>
         public Beam(Vector2D location, Vector2D dir, int owner)
         {
             id = NextID;

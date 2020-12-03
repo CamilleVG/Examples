@@ -18,8 +18,10 @@ namespace Model {
 
         // How many ms must pass before a defeated tank can respawn
         public int RespawnRate { get; private set; }
+
         // How many ms must pass before a defeated tank can respawn
         public int CanAddPowerupFrame{ get; set; }
+
         // How many ms must pass before a defeated tank can respawn
         public int ActivePowerups { get; set; }
 
@@ -45,6 +47,7 @@ namespace Model {
                 return tankColors[id];
             return "";
         }
+
         /// <summary>
         /// Creates an object representing the world with length and width of input size
         /// </summary>
@@ -115,6 +118,7 @@ namespace Model {
                     tankColors.Remove(t.id);
                 }
             }
+
             //Assigns a tank a color
             if (!tankColors.ContainsKey(t.id)) {
                 tankColors.Add(t.id, colorOrder.First());

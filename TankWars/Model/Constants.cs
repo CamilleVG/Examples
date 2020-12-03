@@ -11,20 +11,21 @@ namespace Model {
         public static int HORIZONTAL = 1; // Signifies a wall has a horizontal orientation
         public static int VERTICAL = 0; // Signifies a wall has a vertical orientation
 
+        // XML settings file constants
         public static int MaxHP = 3;
         public static int MAXPOWERUPS = 4;
         public static int BEAMCOOLDOWN = 30;
         public static int POWERUPDELAY = 1650;
         public static int PROJECTILESPEED = 25;
         public static int MYSTERYPOWERUPS = 0;  //0 for default, 1 for mystery powerups
-        public static int TANKSPEED = 4;
+        public static int TANKSPEED = 3;
         public static int ENHANCEDTANKSPEED = 10;
         public static int ENHANCEDPROJECTILESPEED = 50;
         public static int ENHANCEDPROJECTILETIME = 600;
         public static int ENHANCEDTANKSPEEDTIME = 600;
         public static int FASTERFIRERATETIME = 600;
         
-
+        // Constants not editable through the XML settings file
         public const int BEAMLOOPTIMES = 3;
         public const int BEAMSIZELENGTH = (int)(900 * 1.41); // Maximum amount to stretch beam out ((VIEWSIZE * 1.41) will stretch to edge of clients screen)
         public const int BEAMSIZEWIDTH = 60;

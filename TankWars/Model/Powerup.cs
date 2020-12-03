@@ -10,7 +10,6 @@ using TankWars;
 
 namespace Model
 {
-
     /// <summary>
     /// Represents a powerup
     /// </summary>

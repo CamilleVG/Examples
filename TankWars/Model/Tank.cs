@@ -65,6 +65,7 @@ namespace Model {
             get; private set;
         }
 
+        // public as there is no need for error checking on command control setting in this class
         public CommandControl commandControl = new CommandControl();
 
         public int LastShotFrame {
@@ -74,10 +75,17 @@ namespace Model {
         public int BeamCount {
             get; set;
         }
+
+        /// <summary>
+        /// Frame the most recent beam was sent on, this is used for the beam cooldown feature
+        /// </summary>
         public int LastBeamFrame {
             get; set;
         }
 
+        /// <summary>
+        /// What frame the tank died on last
+        /// </summary>
         public int diedOnFrame {
             get; set;
         }
@@ -85,15 +93,28 @@ namespace Model {
         public bool EnhancedSpeed {
             get; set;
         }
+
+        /// <summary>
+        /// The frame on which the speed mode powerup was last initiated on
+        /// </summary>
         public int SpeedModeFrame {
             get; set;
         }
+
         public bool EnhancedProjectiles {
             get; set;
         }
+
+        /// <summary>
+        /// The frame on which the enhanced projectile powerup was last initiated
+        /// </summary>
         public int ProjectileModeFrame {
             get; set;
         }
+
+        /// <summary>
+        /// If a tank has a projectile enhancement powerup that will be activated on the next shot
+        /// </summary>
         public bool ProjectileEnhacementAvailable {
             get; set;
         }
@@ -102,6 +123,9 @@ namespace Model {
             get; set;
         }
 
+        /// <summary>
+        /// Frame on which the faster fire rate powerup was last initiated
+        /// </summary>
         public int FasterFireRateStartFrame {
             get; set;
         }
@@ -137,15 +161,6 @@ namespace Model {
             this.id = id;
             location = loc;
             this.name = name;
-
-            //joined = false;
-            //hitPoints = Constants.MaxHP;
-            //orientation = new Vector2D(0, -1);
-            //tdir = new Vector2D(0, -1);
-            //score = 0;
-            //died = false;
-            //disconnected = false;
-            //BeamCount = 0;
         }
 
     }
