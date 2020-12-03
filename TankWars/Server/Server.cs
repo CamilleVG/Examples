@@ -1,4 +1,7 @@
-﻿using Model;
+﻿// Authors: Preston Powell and Camille Van Ginkel
+// PS9 code for Daniel Kopta's CS 3500 class at the University of Utah Fall 2020
+// Version 1.0.3, Nov - Dec 2020
+using Model;
 using NetworkUtil;
 using Newtonsoft.Json;
 using System;
@@ -13,6 +16,10 @@ using System.Reflection;
 using System.Diagnostics;
 
 namespace Server {
+
+    /// <summary>
+    /// Holds a server object and contains a main method that creates and runs such a server
+    /// </summary>
     class Server {
 
         // Dictionary used to store all client ids and their connections
@@ -141,6 +148,7 @@ namespace Server {
         /// <param name="proj"></param>
         /// <param name="projToRemove"></param>
         private void updateProjectile(Projectile proj, HashSet<Projectile> projToRemove) {
+
             // Determine if speed is enhanced
             int speed = Constants.PROJECTILESPEED;
             if (proj.Enhanced) {
@@ -149,7 +157,7 @@ namespace Server {
             // Check for collisions
             if (!CheckForWallCollision(proj.location + (proj.orientation * speed), 0)) {
 
-                proj.UpdateLocation(proj.location + (proj.orientation * speed));
+                proj.location = (proj.location + (proj.orientation * speed));
 
                 // check to see if the projectile will collide with any tanks and deal damage accordingly
                 if (CheckForTankCollision(proj, out Tank t)) {
@@ -181,23 +189,16 @@ namespace Server {
         /// <param name="b"></param>
         /// <param name="TanksToRemove"></param>
         private void createBeams(Beam b, HashSet<Tank> TanksToRemove) {
-            Vector2D checkingLocation = b.origin;
-
-            // Update a point along the beam's diagonal
-            while (Math.Abs(checkingLocation.GetX()) < world.UniverseSize / 2 && Math.Abs(checkingLocation.GetY()) < world.UniverseSize / 2) {
-                // check each tank for a collision
-                foreach (Tank t in world.Players.Values) {
-                    if (CheckBeamCollision(checkingLocation, t, b.ownerID)) {
-                        t.hitPoints = 0;
-                        t.died = true;
-                        t.diedOnFrame = Frame;
-                        world.Players[b.ownerID].score++;
-                        TanksToRemove.Add(t);
-                    }
+            // check each tank for a collision
+            foreach (Tank t in world.Players.Values) {
+                if (CheckBeamCollision(b.origin, b.direction, t.location, Constants.TANKSIZE / 2)) {
+                    t.hitPoints = 0;
+                    t.died = true;
+                    t.diedOnFrame = Frame;
+                    world.Players[b.ownerID].score++;
                 }
-                // keep checking in the diagonal
-                checkingLocation += b.direction * (Constants.TANKSIZE / 3);
             }
+
         }
 
         /// <summary>
@@ -384,19 +385,42 @@ namespace Server {
         }
 
         /// <summary>
-        /// Checks if a point collides with the given tank excepting the given id
+        /// Determines if a ray interescts a circle, provided by Professor Kopta
         /// </summary>
-        /// <param name="loc"></param>
+        /// <param name="rayOrig">The origin of the ray</param>
+        /// <param name="rayDir">The direction of the ray</param>
+        /// <param name="center">The center of the circle</param>
+        /// <param name="r">The radius of the circle</param>
         /// <returns></returns>
-        private bool CheckBeamCollision(Vector2D loc, Tank tank, int idOfOwner) {
-            // ignore dead tanks and the tank that shot this beam
-            if (tank.hitPoints <= 0 || tank.id == idOfOwner)
+        public static bool CheckBeamCollision(Vector2D rayOrig, Vector2D rayDir, Vector2D center, double r) {
+            // ray-circle intersection test
+            // P: hit point
+            // ray: P = O + tV
+            // circle: (P-C)dot(P-C)-r^2 = 0
+            // substituting to solve for t gives a quadratic equation:
+            // a = VdotV
+            // b = 2(O-C)dotV
+            // c = (O-C)dot(O-C)-r^2
+            // if the discriminant is negative, miss (no solution for P)
+            // otherwise, if both roots are positive, hit
+
+            double a = rayDir.Dot(rayDir);
+            double b = ((rayOrig - center) * 2.0).Dot(rayDir);
+            double c = (rayOrig - center).Dot(rayOrig - center) - r * r;
+
+            // discriminant
+            double disc = b * b - 4.0 * a * c;
+
+            if (disc < 0.0)
                 return false;
-            // kill any tanks caught at this spot of the beam
-            if ((loc - tank.location).Length() < Constants.TANKSIZE / 2) {
-                return true;
-            }
-            return false;
+
+            // find the signs of the roots
+            // technically we should also divide by 2a
+            // but all we care about is the sign, not the magnitude
+            double root1 = -b + Math.Sqrt(disc);
+            double root2 = -b - Math.Sqrt(disc);
+
+            return (root1 > 0.0 && root2 > 0.0);
         }
 
         /// <summary>
@@ -535,6 +559,7 @@ namespace Server {
                                     }
                                     break;
 
+                                // Update constants class using any settings present in the XML file
                                 case "UniverseSize":
                                     reader.Read();
                                     int.TryParse(reader.Value, out size);
