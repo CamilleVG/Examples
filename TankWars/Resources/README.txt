@@ -5,7 +5,7 @@ Parts of the code taken from Daniel Kopta CS3500 University of Utah Fall 2020 cl
 
 Overall Design Server:
 
--Notable Setting-
+-Notable Settings-
 
 MysteryPowerups: 
 This an alternative gamemode, the setting 0 will be the base game and any other setting will be Mystery Powerups. The gamemode
@@ -27,8 +27,11 @@ gameplay. We also chose to up the base tank speed to 4.
 
 - Code Design -
 Beam Collision Detection:
-In order to check for beam collisions we loop over checkpoints along the diagonal spaced about 1/6 of a tank's size apart and check for tank
-collisions at each point.
+Upon watching lecture 25 we have reworked the beam collision to call Professor Kopta's helper method. See below for previous implementation details.
+
+Previous Method of Beam Collision Detection:
+//In order to check for beam collisions we loop over checkpoints along the diagonal spaced about 1/6 of a tank's size apart and check for tank
+//collisions at each point.
 
 Wall TP Blocking:
 We decided to prevent a player from being able to wraparound/teleport to the other side of the world even if a wall was missing if the other side
@@ -41,12 +44,7 @@ Static Server vs Server Object:
 We chose to keep the server as an object that could be created rather than a collection of static methods. With some small modifications
 this would allow one machine to run several servers with the same program if desired.
 
-
-
-
-
-
-
+Total Time Estimate for Server: ~20 hours
 
 Overall Design Client:
 
@@ -85,18 +83,9 @@ of command input order commands were stored in a linkedlist that was updated whe
 or released. Active commands were removed from the list when their button was released and the next command in the list then took priority, with
 a default value of 'none'. This was done in order to ensure movement was smooth especially when multiple keys were pressed at a time.
 
-Total Time Estimate: 45 - 50 hours
+Total Time Estimate for Client: 45 - 50 hours
 
 See github commits for more details on when features were implemented
-
-11/10
-Time Worked: 3 hours
-We implement our handshake.
-
-11/08
-Time Worked: 3 hours
-We created a constants class which will hold values that need to stay consisted throughout the the solution.
-All constants member variables are in all caps.
 
 
 
