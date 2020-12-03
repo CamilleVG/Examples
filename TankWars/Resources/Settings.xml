@@ -9,9 +9,9 @@
 	<PowerupDelay>1650</PowerupDelay>
 	<ProjectileSpeed>25</ProjectileSpeed>
 	<TankSpeed>4</TankSpeed>
-	<MaxPowerups>5</MaxPowerups>
+	<MaxPowerups>2</MaxPowerups>
 
-	<MysteryPowerups>1</MysteryPowerups> <!--0 for default gamemode, 1 for MysteryPowerups-->
+	<MysteryPowerups>0</MysteryPowerups> <!--0 for default gamemode, 1 for MysteryPowerups-->
 	<EnhancedProjectileSpeed>50</EnhancedProjectileSpeed>
 	<EnhancedTankSpeed>10</EnhancedTankSpeed>
 	<EnhancedProjectileTime>600</EnhancedProjectileTime>
